@@ -1,5 +1,5 @@
 # how to use ?
-# python facial_landmarks.py --shape-predictor shape_predictor.dat --image images/test1.jpg
+# python facial_landmarks_images.py --shape-predictor ../model/shape_predictor.dat --image images/test1.jpg
 # could detect more than one face at the same image
 
 from imutils import face_utils
