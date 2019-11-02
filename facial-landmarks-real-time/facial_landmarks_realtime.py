@@ -31,7 +31,6 @@ args = vars(ap.parse_args())
 
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor
-print("[INFO] loading facial landmark predictor...")
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(args["shape_predictor"])
 
@@ -52,10 +51,10 @@ while True:
     for rect in rects:
         # determine the facial landmarks for the every face region, then convert
         # the facial landmark (x, y) to a NumPy array
-        shape = predictor(gray, rect)
-        shape = face_utils.shape_to_np(shape)
+        face = predictor(gray, rect)
+        face = face_utils.shape_to_np(face)
         # loop over the (x, y) for the facial landmarks and draw them on the image
-        for (x, y) in shape:
+        for (x, y) in face:
             cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
     # show the frame
     cv2.imshow("Frame", frame)
