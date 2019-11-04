@@ -4,6 +4,7 @@ import argparse
 from imutils import video, resize
 import time
 import cv2
+import math
 
 import dlib_detector
 import custom_detector
@@ -12,18 +13,25 @@ import custom_detector
 args = argparse.ArgumentParser()
 args.add_argument('-m', '--model', required=True,
                   help='path to facial landmark model')
-args.add_argument('--algo', required=True, choices=['DLIB', 'CUSTOM'])
+args.add_argument('--algo', required=True, choices=['dlib', 'custom'])
 args = args.parse_args()
 
 # choose detector
-detector = dlib_detector.DlibDetector if args.algo == 'DLIB' else custom_detector.CustomDetector
+detector = dlib_detector.DlibDetector if args.algo == 'dlib' else custom_detector.CustomDetector
 detector = detector(args.model)
 
 # video stream
 vs = video.VideoStream().start()
 
+fps_sum = 0
+num_frames = 0
+max_fps = 0
+min_fps = math.inf
+
 # loop until user exits
 while (cv2.waitKey(1) & 0xFF) != ord('q'):
+    time_start = time.time()
+
     # frame -> resize -> gray
     frame = vs.read()
     frame = resize(frame, width=500)
@@ -37,6 +45,17 @@ while (cv2.waitKey(1) & 0xFF) != ord('q'):
 
     cv2.imshow('frame', frame)
 
+    fps = 1 / (time.time() - time_start)
+    fps_sum += fps
+    num_frames += 1
+    max_fps = max(max_fps, fps)
+    min_fps = min(min_fps, fps)
+
+    print('Avg FPS = {:3.2f}, Max FPS = {:3.2f}, Min FPS = {:3.2f}\r'.format(
+        fps_sum/num_frames, max_fps, min_fps), end='')
+
 # cleanup
 cv2.destroyAllWindows()
 vs.stop()
+
+print()

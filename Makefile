@@ -1,4 +1,4 @@
-algo=DLIB
+algo=dlib
 
 run:
 	python3.7 main.py --model model/shape_predictor.dat --algo ${algo}
