@@ -1,5 +1,7 @@
+algo=DLIB
+
 run:
-	python3.7 main.py --model model/shape_predictor.dat
+	python3.7 main.py --model model/shape_predictor.dat --algo ${algo}
 
 init:
 	@if ! [ `command -v  python3.7` ]; then\
@@ -8,12 +10,10 @@ init:
 
 	@echo install python requirements
 	pip3.7 install --user --verbose --timeout 180 \
-					opencv-python imutils datetime argparse dlib
+					opencv-python imutils datetime argparse
 
 dlib:
-	@if ! [ -s dlib-19.18.tar.bz2 ]; then\
-		wget http://dlib.net/files/dlib-19.18.tar.bz2;\
-	fi
+	wget http://dlib.net/files/dlib-19.18.tar.bz2
 
 	tar xjf dlib-19.18.tar.bz2
 	cd dlib-19.18
