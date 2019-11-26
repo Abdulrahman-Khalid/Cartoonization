@@ -23,3 +23,6 @@ dlib:
 
 	cd ..
 	rm -rf dlib-19.18
+
+ui:
+	pyuic5 -x ui.ui -o gen_ui.py
