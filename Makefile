@@ -10,7 +10,7 @@ init:
 
 	@echo install python requirements
 	pip3.7 install --user --verbose --timeout 180 \
-					opencv-python imutils datetime argparse dlib
+					opencv-python imutils datetime argparse dlib PyQt5
 
 dlib:
 	wget http://dlib.net/files/dlib-19.18.tar.bz2
