@@ -15,6 +15,8 @@ import dlib_detector
 import custom_detector
 import gen_ui
 
+import c
+
 
 def cirle_features(frame, faces):
     for face in faces:
@@ -131,7 +133,8 @@ class Window(gen_ui.Ui_MainWindow):
         # widgets
         self.widgetFrame = FeaturesFrameWidget(self.widgetFrame)
         self.widget2D = CartoonizationWidget(self.widget2D)
-        self.widget3D = EmojiWidget(self.widget3D)
+        # self.widget3D = EmojiWidget(self.widget3D)
+        # self.widget3D = c.QPanda3DWidget(c.MyWorld(), parent=self.widget3D)
 
         # fps calculations
         self.fps_sum = 0
@@ -161,7 +164,7 @@ class Window(gen_ui.Ui_MainWindow):
         # update widgets
         self.widgetFrame.update_img(frame.copy(), faces)
         self.widget2D.update_img(frame.copy(), gray_frame.copy(), faces)
-        self.widget3D.update_img(gray_frame, faces)
+        # self.widget3D.update_img(gray_frame, faces)
 
         self.update_fps(time_start)
 
@@ -188,8 +191,17 @@ args = args.parse_args()
 
 # app
 app = QtWidgets.QApplication(sys.argv)
+
 ui = Window(args)
 ui.show()
+
+appw = QtWidgets.QMainWindow()
+appw.setGeometry(50, 50, 800, 600)
+world = c.MyWorld()
+pandaWidget = c.QPanda3DWidget(world)
+appw.setCentralWidget(pandaWidget)
+appw.show()
+
 exit_code = app.exec_()
 
 print()  # to keep the fps line
