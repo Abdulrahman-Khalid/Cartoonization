@@ -6,6 +6,9 @@ __pycache__
 # C extensions
 *.so
 
+#DataSet
+/ViolaJones/DataSet/
+
 # Distribution / packaging
 .Python
 build/
