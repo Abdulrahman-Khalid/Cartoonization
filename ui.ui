@@ -13,19 +13,19 @@
     <x>0</x>
     <y>0</y>
     <width>832</width>
-    <height>635</height>
+    <height>326</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>832</width>
-    <height>635</height>
+    <height>326</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>832</width>
-    <height>635</height>
+    <height>326</height>
    </size>
   </property>
   <property name="mouseTracking">
@@ -47,16 +47,6 @@
    <enum>QTabWidget::Rounded</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="widget3D" native="true">
-    <property name="geometry">
-     <rect>
-      <x>-1</x>
-      <y>-1</y>
-      <width>411</width>
-      <height>301</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QWidget" name="widget2D" native="true">
     <property name="geometry">
      <rect>
@@ -70,8 +60,8 @@
    <widget class="QWidget" name="widgetFrame" native="true">
     <property name="geometry">
      <rect>
-      <x>200</x>
-      <y>310</y>
+      <x>0</x>
+      <y>0</y>
       <width>411</width>
       <height>301</height>
      </rect>

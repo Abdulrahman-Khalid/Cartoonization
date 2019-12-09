@@ -69,6 +69,9 @@ class MyWorld(Panda3DWorld):
                                   name="pandaPace")
         self.pandaPace.loop()
 
+    def update_img(self, gray_frame, faces):
+        pass
+
     # Define a procedure to move the camera.
     def spinCameraTask(self, task):
         angleDegrees = task.time * 6.0
@@ -77,16 +80,3 @@ class MyWorld(Panda3DWorld):
                            20.0 * cos(angleRadians), 3)
         self.camera.setHpr(angleDegrees, 0, 0)
         return Task.cont
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    appw = QtWidgets.QMainWindow()
-    appw.setGeometry(50, 50, 800, 600)
-    world = MyWorld()
-    pandaWidget = QPanda3DWidget(world)
-    appw.setCentralWidget(pandaWidget)
-    appw.show()
-    
-    sys.exit(app.exec_())
