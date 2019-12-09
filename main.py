@@ -14,6 +14,7 @@ from PyQt5 import QtGui
 import dlib_detector
 import custom_detector
 import gen_ui
+import emoji_window
 
 
 def cirle_features(frame, faces):
@@ -55,8 +56,12 @@ class VideoRecorder(QtCore.QObject):
             return
 
         read, data = self.camera.read()
-        if read:
-            self.image_data.emit(cv2.flip(data, 1))
+
+        if not read:
+            print('Error reading from the webcam', file=sys.stderr)
+            exit(1)
+
+        self.image_data.emit(cv2.flip(data, 1))
 
 
 class FeaturesFrameWidget(QtWidgets.QWidget):
@@ -99,39 +104,18 @@ class CartoonizationWidget(QtWidgets.QWidget):
         self.image = QtGui.QImage()
 
 
-class EmojiWidget(QtWidgets.QWidget):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.image = QtGui.QImage()
-
-    def update_img(self, gray_image, faces):
-        # TODO: gen 3d
-
-        if self.image.size() != self.size():
-            self.setFixedSize(self.image.size())
-
-        self.update()
-
-    def paintEvent(self, event):
-        painter = QtGui.QPainter(self)
-        painter.drawImage(0, 0, self.image)
-        self.image = QtGui.QImage()
-
-
 class Window(gen_ui.Ui_MainWindow):
-    def __init__(self, args):
+    def __init__(self, args, emoji_world, detector):
         self.parent = QtWidgets.QMainWindow()
 
         self.setupUi(self.parent)
 
-        # choose detector
-        detector = dlib_detector.DlibDetector if args.algo == 'dlib' else custom_detector.CustomDetector
-        self.detector = detector(args.model)
+        self.detector = detector
 
         # widgets
         self.widgetFrame = FeaturesFrameWidget(self.widgetFrame)
         self.widget2D = CartoonizationWidget(self.widget2D)
-        self.widget3D = EmojiWidget(self.widget3D)
+        self.emoji_world = emoji_world
 
         # fps calculations
         self.fps_sum = 0
@@ -161,7 +145,7 @@ class Window(gen_ui.Ui_MainWindow):
         # update widgets
         self.widgetFrame.update_img(frame.copy(), faces)
         self.widget2D.update_img(frame.copy(), gray_frame.copy(), faces)
-        self.widget3D.update_img(gray_frame, faces)
+        self.emoji_world.update_img(gray_frame, faces)
 
         self.update_fps(time_start)
 
@@ -179,19 +163,31 @@ class Window(gen_ui.Ui_MainWindow):
         self.statusbar.showMessage(fps_msg)
 
 
-# args
+# parse args
 args = argparse.ArgumentParser()
 args.add_argument('-m', '--model', required=True,
                   help='path to facial landmark model')
 args.add_argument('--algo', required=True, choices=['dlib', 'custom'])
 args = args.parse_args()
 
-# app
+# choose detector
+detector = dlib_detector.DlibDetector if args.algo == 'dlib' else custom_detector.CustomDetector
+detector = detector(args.model)
+
+# define app
 app = QtWidgets.QApplication(sys.argv)
-ui = Window(args)
+
+em_window = QtWidgets.QMainWindow()
+em_window.setGeometry(-1, -1, 411, 301)
+emoji_world = emoji_window.MyWorld()
+pandaWidget = emoji_window.QPanda3DWidget(emoji_world)
+em_window.setCentralWidget(pandaWidget)
+
+ui = Window(args, emoji_world, detector)
+
+# run app
+em_window.show()
 ui.show()
 exit_code = app.exec_()
-
 print()  # to keep the fps line
-
 sys.exit(exit_code)
