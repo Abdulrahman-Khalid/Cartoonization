@@ -20,7 +20,7 @@ glasses = cv2.imread('data/glasses.png', cv2.IMREAD_UNCHANGED)
 assert glasses.shape[2] == 4
 
 
-def blit(dst, img):
+def img_blit(dst, img):
     x2, y2 = min(dst.shape[0], img.shape[0]), min(dst.shape[1], img.shape[1])
     assert x2 < dst.shape[0] and y2 < dst.shape[1]
 
@@ -28,16 +28,34 @@ def blit(dst, img):
     alpha_dst = 1 - alpha_img
 
     for c in range(0, 3):
-        dst[:x2, :y2, c] = (alpha_img * img[:, :, c] +
+        dst[:x2, :y2, c] = (alpha_img * img[:x2, :y2, c] +
                             alpha_dst * dst[:x2, :y2, c])
 
     return dst
 
 
+def img_scale(img, fx, fy):
+    return cv2.resize(img, None, fx=fx, fy=fy, interpolation=cv2.INTER_CUBIC)
+
+
+def img_translate(img, dx, dy):
+    rows, cols = img.shape
+    mat = np.float32([[1, 0, dx], [0, 1, dy]])
+
+    return cv2.warpAffine(img, mat, (cols, rows))
+
+
+def img_rotate_center(img, deg):
+    rows, cols = img.shape
+    mat = cv2.getRotationMatrix2D((cols/2, rows/2), 90, 1)
+
+    return cv2.warpAffine(img, mat, (cols, rows))
+
+
 def put_sticker(image, faces):
     global glasses
 
-    return blit(image, glasses)
+    return img_blit(image, glasses)
 
 
 def cirle_features(frame, faces):
@@ -211,7 +229,7 @@ em_window.setCentralWidget(pandaWidget)
 ui = Window(args, emoji_world, detector)
 
 # run app
-em_window.show()
+# em_window.show()
 ui.show()
 exit_code = app.exec_()
 print()  # to keep the fps line
