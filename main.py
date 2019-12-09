@@ -16,6 +16,29 @@ import custom_detector
 import gen_ui
 import emoji_window
 
+glasses = cv2.imread('data/glasses.png', cv2.IMREAD_UNCHANGED)
+assert glasses.shape[2] == 4
+
+
+def blit(dst, img):
+    x2, y2 = min(dst.shape[0], img.shape[0]), min(dst.shape[1], img.shape[1])
+    assert x2 < dst.shape[0] and y2 < dst.shape[1]
+
+    alpha_img = img[:, :, 3] / 255
+    alpha_dst = 1 - alpha_img
+
+    for c in range(0, 3):
+        dst[:x2, :y2, c] = (alpha_img * img[:, :, c] +
+                            alpha_dst * dst[:x2, :y2, c])
+
+    return dst
+
+
+def put_sticker(image, faces):
+    global glasses
+
+    return blit(image, glasses)
+
 
 def cirle_features(frame, faces):
     for face in faces:
@@ -91,6 +114,8 @@ class CartoonizationWidget(QtWidgets.QWidget):
 
     def update_img(self, image, gray_image, faces):
         # TODO: edit image with stickers
+        image = put_sticker(image, faces)
+
         self.image = ndarray_to_qimage(image)
 
         if self.image.size() != self.size():
