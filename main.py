@@ -119,25 +119,28 @@ def get_half(a, b):
     return ((ay+by)//2, (ax+bx)//2)
 
 
-def put_sticker(image, faces, p_glasses, p_mustache, p_hat):
+def put_sticker(image, faces, p_glasses, p_mustache, p_hat, draw_hat, draw_glasses, draw_mustache):
     for face in faces:
         dst = get_dist(face[36], face[45])
         slope = get_slope(face[46-1], face[43-1])
 
-        scl = dst/150
-        glasses = img_rotate_center(p_glasses.copy(), slope)
-        glasses = img_scale(glasses, scl, scl)
-        image = img_blit(image, glasses, face[27][1], face[27][0])
+        if draw_glasses:
+            scl = dst/150
+            glasses = img_rotate_center(p_glasses.copy(), slope)
+            glasses = img_scale(glasses, scl, scl)
+            image = img_blit(image, glasses, face[27][1], face[27][0])
 
-        scl = dst/470
-        mustache = img_rotate_center(p_mustache.copy(), slope)
-        mustache = img_scale(mustache, scl, scl)
-        image = img_blit(image, mustache, *get_half(face[51], face[33]))
+        if draw_mustache:
+            scl = dst/470
+            mustache = img_rotate_center(p_mustache.copy(), slope)
+            mustache = img_scale(mustache, scl, scl)
+            image = img_blit(image, mustache, *get_half(face[51], face[33]))
 
-        scl = dst/800
-        hat = img_rotate_center(p_hat.copy(), slope)
-        hat = img_scale(hat, scl, scl)
-        image = img_blit(image, hat, int(face[27][1]-dst), face[27][0])
+        if draw_hat:
+            scl = dst/800
+            hat = img_rotate_center(p_hat.copy(), slope)
+            hat = img_scale(hat, scl, scl)
+            image = img_blit(image, hat, int(face[27][1]-dst), face[27][0])
 
     return image
 
@@ -222,9 +225,9 @@ class CartoonizationWidget(QtWidgets.QWidget):
         assert self.mustache.shape[2] == 4
         assert self.hat.shape[2] == 4
 
-    def update_img(self, image, gray_image, faces):
+    def update_img(self, image, gray_image, faces, draw_hat, draw_glasses, draw_mustache):
         image = put_sticker(
-            image, faces, self.glasses, self.mustache, self.hat)
+            image, faces, self.glasses, self.mustache, self.hat, draw_hat, draw_glasses, draw_mustache)
 
         self.image = ndarray_to_qimage(image)
 
@@ -263,6 +266,10 @@ class Window(gen_ui.Ui_MainWindow):
         self.vr.image_data.connect(self.image_data_slot)
         self.vr.start_recording()
 
+        self.hat.setChecked(True)
+        self.glasses.setChecked(True)
+        self.mustache.setChecked(True)
+
     def show(self):
         self.parent.show()
 
@@ -282,7 +289,7 @@ class Window(gen_ui.Ui_MainWindow):
         # update widgets
         self.widgetFrame.update_img(frame.copy(), self.last_faces)
         self.widget2D.update_img(
-            frame.copy(), gray_frame.copy(), self.last_faces)
+            frame.copy(), gray_frame.copy(), self.last_faces, self.hat.isChecked(), self.glasses.isChecked(), self.mustache.isChecked())
 
         self.update_fps(time_start)
 
