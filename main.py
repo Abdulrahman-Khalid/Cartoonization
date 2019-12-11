@@ -14,7 +14,6 @@ from PyQt5 import QtGui
 import dlib_detector
 import custom_detector
 import gen_ui
-import emoji_window
 
 
 def cut_src(src, x, y, xmax, ymax):
@@ -239,7 +238,7 @@ class CartoonizationWidget(QtWidgets.QWidget):
 
 
 class Window(gen_ui.Ui_MainWindow):
-    def __init__(self, args, emoji_world, detector):
+    def __init__(self, args, detector):
         self.parent = QtWidgets.QMainWindow()
 
         self.setupUi(self.parent)
@@ -250,7 +249,6 @@ class Window(gen_ui.Ui_MainWindow):
         # widgets
         self.widgetFrame = FeaturesFrameWidget(self.widgetFrame)
         self.widget2D = CartoonizationWidget(self.widget2D)
-        self.emoji_world = emoji_world
 
         # fps calculations
         self.fps_sum = 0
@@ -283,7 +281,6 @@ class Window(gen_ui.Ui_MainWindow):
         self.widgetFrame.update_img(frame.copy(), self.last_faces)
         self.widget2D.update_img(
             frame.copy(), gray_frame.copy(), self.last_faces)
-        self.emoji_world.update_img(gray_frame, self.last_faces)
 
         self.update_fps(time_start)
 
@@ -315,16 +312,9 @@ detector = detector(args.model)
 # define app
 app = QtWidgets.QApplication(sys.argv)
 
-em_window = QtWidgets.QMainWindow()
-em_window.setGeometry(-1, -1, 411, 301)
-emoji_world = emoji_window.MyWorld()
-pandaWidget = emoji_window.QPanda3DWidget(emoji_world)
-em_window.setCentralWidget(pandaWidget)
-
-ui = Window(args, emoji_world, detector)
+ui = Window(args, detector)
 
 # run app
-# em_window.show()
 ui.show()
 exit_code = app.exec_()
 print()  # to keep the fps line
