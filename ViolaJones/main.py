@@ -38,16 +38,16 @@ def main():
     #     facesTrainingPath = './DataSet/Training/Faces'
     #     nonFacesTrainingPath = './DataSet/Training/NonFaces'
     classifiersFileName = 'classifiers.pkl'
-    facesTrainingPath = './DataSet/Training/Small_Data_Set/Faces'
-    nonFacesTrainingPath = './DataSet/Training/Small_Data_Set/NonFaces'
+    facesTrainingPath = './DataSet/Training/Faces'
+    nonFacesTrainingPath = './DataSet/Training/NonFaces'
     facesTestingPath = './DataSet/Testing/Faces'
     nonFacesTestingPath = './DataSet/Testing/NonFaces'
     if not os.path.exists(classifiersFileName) or (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'relearn'):
-        minFeatureHeight = 2
-        minFeatureWidth = 2
+        minFeatureHeight = 1
+        minFeatureWidth = 1
         maxFeatureHeight = 24
         maxFeatureWidth = 24
-        classifiersNum = 2
+        classifiersNum = 4370
 
         print('Loading faces training data set...')
         facesTraining = utils.load_images(facesTrainingPath)
