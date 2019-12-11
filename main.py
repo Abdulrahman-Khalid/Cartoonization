@@ -63,15 +63,10 @@ def img_blit(dst, src, cx=0, cy=0):
     alpha_img = src[:, :, 3] / 255
     alpha_dst = 1 - alpha_img
 
-    # asserts
-    assert src.shape[:2] == dst.shape[:2],\
-        f'{src.shape[:2]} != {dst.shape[:2]}, {x}, {y}'
-    assert alpha_img.shape[:2] == alpha_dst.shape[:2],\
-        f'{alpha_img.shape[:2]}) != {alpha_dst.shape[:2]}'
-
     # blit
     for c in range(0, 3):
-        dst[:, :, c] = (alpha_img * src[:, :, c] + alpha_dst * dst[:, :, c])
+        dst[:, :, c] = (alpha_img * src[:, :, c] +
+                        alpha_dst * dst[:, :, c])
 
     return final_dst
 
@@ -113,14 +108,37 @@ def get_slope(a, b):
     return (ay-by)/(ax-bx)
 
 
-def put_sticker(image, faces, glasses):
+def get_dist(a, b):
+    ax, ay = a
+    bx, by = b
+    return math.sqrt((ay-by)**2+(ax-bx)**2)
+
+
+def get_half(a, b):
+    ax, ay = a
+    bx, by = b
+    return ((ay+by)//2, (ax+bx)//2)
+
+
+def put_sticker(image, faces, p_glasses, p_mustache):
     for face in faces:
-        slope0, slope1 = get_slope(
-            face[46-1], face[43-1]), get_slope(face[40-1], face[37-1])
-        slope = (slope0+slope1)/2
-        glasses = img_rotate_center(glasses, slope)
-        # glasses = img_scale(glasses, 2, 2)
+        dst = get_dist(face[36], face[45])
+
+        scl = dst/150
+        scl = scl if scl != 0 else 1
+
+        slope = get_slope(face[46-1], face[43-1])
+
+        glasses = img_rotate_center(p_glasses.copy(), slope)
+        glasses = img_scale(glasses, scl, scl)
         image = img_blit(image, glasses, face[27][1], face[27][0])
+
+        scl = dst/470
+        scl = scl if scl != 0 else 1
+
+        mustache = img_rotate_center(p_mustache.copy(), slope)
+        mustache = img_scale(mustache, scl, scl)
+        image = img_blit(image, mustache, *get_half(face[51], face[33]))
 
     return image
 
@@ -198,11 +216,14 @@ class CartoonizationWidget(QtWidgets.QWidget):
         self.image = QtGui.QImage()
 
         self.glasses = cv2.imread('data/glasses.png', cv2.IMREAD_UNCHANGED)
+        self.mustache = cv2.imread('data/mustache.png', cv2.IMREAD_UNCHANGED)
+
         assert self.glasses.shape[2] == 4
+        assert self.mustache.shape[2] == 4
 
     def update_img(self, image, gray_image, faces):
-        # TODO: edit image with stickers
-        image = put_sticker(image, faces, self.glasses.copy())
+        image = put_sticker(
+            image, faces, self.glasses.copy(), self.mustache.copy())
 
         self.image = ndarray_to_qimage(image)
 
