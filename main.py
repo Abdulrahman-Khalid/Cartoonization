@@ -71,7 +71,7 @@ def img_blit(dst, src, cx=0, cy=0):
 
 
 def img_scale(img, fx, fy):
-    return cv2.resize(img, None, fx=fx, fy=fy, interpolation=cv2.INTER_CUBIC)
+    return cv2.resize(img, None, fx=fx if fx != 0 else 1, fy=fy if fy != 0 else 1, interpolation=cv2.INTER_CUBIC)
 
 
 def img_rotate_center(mat, angle):
@@ -119,25 +119,25 @@ def get_half(a, b):
     return ((ay+by)//2, (ax+bx)//2)
 
 
-def put_sticker(image, faces, p_glasses, p_mustache):
+def put_sticker(image, faces, p_glasses, p_mustache, p_hat):
     for face in faces:
         dst = get_dist(face[36], face[45])
-
-        scl = dst/150
-        scl = scl if scl != 0 else 1
-
         slope = get_slope(face[46-1], face[43-1])
 
+        scl = dst/150
         glasses = img_rotate_center(p_glasses.copy(), slope)
         glasses = img_scale(glasses, scl, scl)
         image = img_blit(image, glasses, face[27][1], face[27][0])
 
         scl = dst/470
-        scl = scl if scl != 0 else 1
-
         mustache = img_rotate_center(p_mustache.copy(), slope)
         mustache = img_scale(mustache, scl, scl)
         image = img_blit(image, mustache, *get_half(face[51], face[33]))
+
+        scl = dst/800
+        hat = img_rotate_center(p_hat.copy(), slope)
+        hat = img_scale(hat, scl, scl)
+        image = img_blit(image, hat, int(face[27][1]-dst), face[27][0])
 
     return image
 
@@ -216,13 +216,15 @@ class CartoonizationWidget(QtWidgets.QWidget):
 
         self.glasses = cv2.imread('data/glasses.png', cv2.IMREAD_UNCHANGED)
         self.mustache = cv2.imread('data/mustache.png', cv2.IMREAD_UNCHANGED)
+        self.hat = cv2.imread('data/santas_hat.png', cv2.IMREAD_UNCHANGED)
 
         assert self.glasses.shape[2] == 4
         assert self.mustache.shape[2] == 4
+        assert self.hat.shape[2] == 4
 
     def update_img(self, image, gray_image, faces):
         image = put_sticker(
-            image, faces, self.glasses.copy(), self.mustache.copy())
+            image, faces, self.glasses, self.mustache, self.hat)
 
         self.image = ndarray_to_qimage(image)
 
