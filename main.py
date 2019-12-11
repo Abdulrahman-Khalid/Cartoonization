@@ -16,46 +16,113 @@ import custom_detector
 import gen_ui
 import emoji_window
 
-glasses = cv2.imread('data/glasses.png', cv2.IMREAD_UNCHANGED)
-assert glasses.shape[2] == 4
+
+def cut_src(src, x, y, xmax, ymax):
+    if x > xmax or y > ymax:
+        return None
+
+    if x < 0:
+        src = src[-x:, :, :]
+        x = 0
+
+    if y < 0:
+        src = src[:, -y:, :]
+        y = 0
+
+    if x+src.shape[0] > xmax:
+        src = src[:xmax-x, :, :]
+
+    if y+src.shape[1] > ymax:
+        src = src[:, :ymax-y, :]
+
+    if src.shape[0] == 0 or src.shape[1] == 0:
+        return None
+    return src
 
 
-def img_blit(dst, img):
-    x2, y2 = min(dst.shape[0], img.shape[0]), min(dst.shape[1], img.shape[1])
-    assert x2 < dst.shape[0] and y2 < dst.shape[1]
+def cut_dst(dst, src, x, y):
+    x, y = max(x, 0), max(y, 0)
+    return dst[x:x+src.shape[0], y:y+src.shape[1], :]
 
-    alpha_img = img[:, :, 3] / 255
+
+def img_blit(dst, src, cx=0, cy=0):
+    x, y = cx-src.shape[0]//2, cy-src.shape[1]//2
+    x, y = min(x, dst.shape[0]), min(y, dst.shape[1])
+
+    # cut src
+    src = cut_src(src, x, y, dst.shape[0], dst.shape[1])
+
+    if src is None:
+        return dst
+
+    # cut dst
+    final_dst = dst
+    dst = cut_dst(dst, src, x, y)
+
+    # alpha
+    alpha_img = src[:, :, 3] / 255
     alpha_dst = 1 - alpha_img
 
-    for c in range(0, 3):
-        dst[:x2, :y2, c] = (alpha_img * img[:x2, :y2, c] +
-                            alpha_dst * dst[:x2, :y2, c])
+    # asserts
+    assert src.shape[:2] == dst.shape[:2],\
+        f'{src.shape[:2]} != {dst.shape[:2]}, {x}, {y}'
+    assert alpha_img.shape[:2] == alpha_dst.shape[:2],\
+        f'{alpha_img.shape[:2]}) != {alpha_dst.shape[:2]}'
 
-    return dst
+    # blit
+    for c in range(0, 3):
+        dst[:, :, c] = (alpha_img * src[:, :, c] + alpha_dst * dst[:, :, c])
+
+    return final_dst
 
 
 def img_scale(img, fx, fy):
     return cv2.resize(img, None, fx=fx, fy=fy, interpolation=cv2.INTER_CUBIC)
 
 
-def img_translate(img, dx, dy):
-    rows, cols = img.shape
-    mat = np.float32([[1, 0, dx], [0, 1, dy]])
+def img_rotate_center(mat, angle):
+    angle = -math.degrees(angle)
 
-    return cv2.warpAffine(img, mat, (cols, rows))
+    height, width = mat.shape[:2]  # image shape has 3 dimensions
+    height, width = mat.shape[:2]  # image shape has 3 dimensions
+    # getRotationMatrix2D needs coordinates in reverse order (width, height) compared to shape
+    image_center = (width/2, height/2)
+    rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1.)
+
+    # rotation calculates the cos and sin, taking absolutes of those.
+    abs_cos = abs(rotation_mat[0, 0])
+    abs_cos = abs(rotation_mat[0, 0])
+    abs_sin = abs(rotation_mat[0, 1])
+    # find the new width and height bounds
+    bound_w = int(height * abs_sin + width * abs_cos)
+    bound_h = int(height * abs_cos + width * abs_sin)
+
+    # subtract old image center (bringing image back to origo) and adding the new image center coordinates
+    rotation_mat[0, 2] += bound_w/2 - image_center[0]
+    rotation_mat[1, 2] += bound_h/2 - image_center[1]
+
+    # rotate image with the new bounds and translated rotation matrix
+    return cv2.warpAffine(mat, rotation_mat, (bound_w, bound_h))
 
 
-def img_rotate_center(img, deg):
-    rows, cols = img.shape
-    mat = cv2.getRotationMatrix2D((cols/2, rows/2), 90, 1)
+def get_slope(a, b):
+    ax, ay = a
+    bx, by = b
+    if ay == by:
+        return 0
+    return (ay-by)/(ax-bx)
 
-    return cv2.warpAffine(img, mat, (cols, rows))
 
+def put_sticker(image, faces, glasses):
+    for face in faces:
+        slope0, slope1 = get_slope(
+            face[46-1], face[43-1]), get_slope(face[40-1], face[37-1])
+        slope = (slope0+slope1)/2
+        glasses = img_rotate_center(glasses, slope)
+        # glasses = img_scale(glasses, 2, 2)
+        image = img_blit(image, glasses, face[27][1], face[27][0])
 
-def put_sticker(image, faces):
-    global glasses
-
-    return img_blit(image, glasses)
+    return image
 
 
 def cirle_features(frame, faces):
@@ -130,9 +197,12 @@ class CartoonizationWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.image = QtGui.QImage()
 
+        self.glasses = cv2.imread('data/glasses.png', cv2.IMREAD_UNCHANGED)
+        assert self.glasses.shape[2] == 4
+
     def update_img(self, image, gray_image, faces):
         # TODO: edit image with stickers
-        image = put_sticker(image, faces)
+        image = put_sticker(image, faces, self.glasses.copy())
 
         self.image = ndarray_to_qimage(image)
 
@@ -154,6 +224,7 @@ class Window(gen_ui.Ui_MainWindow):
         self.setupUi(self.parent)
 
         self.detector = detector
+        self.last_faces = [[(0, 0)] * 68]
 
         # widgets
         self.widgetFrame = FeaturesFrameWidget(self.widgetFrame)
@@ -184,11 +255,14 @@ class Window(gen_ui.Ui_MainWindow):
 
         # detection
         faces = self.detector.extract_faces(gray_frame)
+        if len(faces) > 0:
+            self.last_faces = faces
 
         # update widgets
-        self.widgetFrame.update_img(frame.copy(), faces)
-        self.widget2D.update_img(frame.copy(), gray_frame.copy(), faces)
-        self.emoji_world.update_img(gray_frame, faces)
+        self.widgetFrame.update_img(frame.copy(), self.last_faces)
+        self.widget2D.update_img(
+            frame.copy(), gray_frame.copy(), self.last_faces)
+        self.emoji_world.update_img(gray_frame, self.last_faces)
 
         self.update_fps(time_start)
 
