@@ -3,17 +3,18 @@ import os
 import violajones.AdaBoost as AdaBoost
 import violajones.Utils as utils
 import violajones.IntegralImage as IImg
+import constants as c
 
 
 def testClassifiers(classifiers, facesTestingPath, nonFacesTestingPath):
     print('Loading faces testing data set...')
-    facesTesting = utils.load_images(facesTestingPath)
+    facesTesting = utils.load_images(c.facesTestingPath)
     facesTestingIntegral = list(
         map(IImg.get_integral_image, facesTesting))
     print(str(len(facesTesting)) +
           ' Testing faces data set are loaded!\n')
     print('Loading testing non faces data set...')
-    nonFacesTesting = utils.load_images(nonFacesTestingPath)
+    nonFacesTesting = utils.load_images(c.nonFacesTestingPath)
     nonFacesTestingIntegral = list(
         map(IImg.get_integral_image, nonFacesTesting))
     print(str(len(nonFacesTesting)) +
@@ -37,41 +38,30 @@ def testClassifiers(classifiers, facesTestingPath, nonFacesTestingPath):
 def main():
     #     facesTrainingPath = './DataSet/Training/Faces'
     #     nonFacesTrainingPath = './DataSet/Training/NonFaces'
-    classifiersFileName = 'classifiers.pkl'
-    facesTrainingPath = './DataSet/Training/Faces'
-    nonFacesTrainingPath = './DataSet/Training/NonFaces'
-    facesTestingPath = './DataSet/Testing/Faces'
-    nonFacesTestingPath = './DataSet/Testing/NonFaces'
-    if not os.path.exists(classifiersFileName) or (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'relearn'):
-        minFeatureHeight = 1
-        minFeatureWidth = 1
-        maxFeatureHeight = 24
-        maxFeatureWidth = 24
-        classifiersNum = 4370
-
+    if not os.path.exists(c.classifiersFileName) or (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'relearn'):
         print('Loading faces training data set...')
-        facesTraining = utils.load_images(facesTrainingPath)
+        facesTraining = utils.load_images(c.facesTrainingPath)
         facesTrainingIntegral = list(
             map(IImg.get_integral_image, facesTraining))
         print(str(len(facesTraining)) +
               ' Training faces data set are loaded!\n')
         print('Loading non faces training data set...')
-        nonFacesTraining = utils.load_images(nonFacesTrainingPath)
+        nonFacesTraining = utils.load_images(c.nonFacesTrainingPath)
         nonFacesTrainingIntegral = list(
             map(IImg.get_integral_image, nonFacesTraining))
         print(str(len(nonFacesTraining)) +
               ' Training non faces data set are loaded!\n')
 
         classifiers = AdaBoost.adaBoostLearn(facesTrainingIntegral, nonFacesTrainingIntegral,
-                                             minFeatureHeight, maxFeatureHeight, minFeatureWidth, maxFeatureWidth, classifiersNum)
+                                             c.minFeatureHeight, c.maxFeatureHeight, c.minFeatureWidth, c.maxFeatureWidth, c.classifiersNum)
 
-        utils.save_classifiers(classifiers, classifiersFileName)
+        utils.save_classifiers(classifiers, c.classifiersFileName)
 
-        testClassifiers(classifiers, facesTestingPath, nonFacesTestingPath)
+        testClassifiers(classifiers, c.facesTestingPath, c.nonFacesTestingPath)
 
-    elif os.path.exists(classifiersFileName):
-        classifiers = utils.load_classifiers(classifiersFileName)
-        testClassifiers(classifiers, facesTestingPath, nonFacesTestingPath)
+    elif os.path.exists(c.classifiersFileName):
+        classifiers = utils.load_classifiers(c.classifiersFileName)
+        testClassifiers(classifiers, c.facesTestingPath, c.nonFacesTestingPath)
 
 
 main()

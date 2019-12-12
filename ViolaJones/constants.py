@@ -1,0 +1,10 @@
+classifiersFileName = 'classifiers.pkl'
+facesTrainingPath = './DataSet/Training/Faces'
+nonFacesTrainingPath = './DataSet/Training/NonFaces'
+facesTestingPath = './DataSet/Testing/Faces'
+nonFacesTestingPath = './DataSet/Testing/NonFaces'
+minFeatureHeight = 5
+minFeatureWidth = 5
+maxFeatureHeight = 18
+maxFeatureWidth = 18
+classifiersNum = 2000

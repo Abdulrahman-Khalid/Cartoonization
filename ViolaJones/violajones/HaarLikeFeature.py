@@ -5,8 +5,8 @@ def enum(**enums):
     return type('Enum', (), enums)
 
 
-FeatureType = enum(TWO_VERTICAL=(1, 2), TWO_HORIZONTAL=(
-    2, 1), THREE_HORIZONTAL=(3, 1), THREE_VERTICAL=(1, 3), FOUR=(2, 2))
+FeatureType = enum(TWO_HORIZONTAL=(
+    2, 1), THREE_HORIZONTAL=(3, 1), TWO_VERTICAL=(1, 2), THREE_VERTICAL=(1, 3), FOUR=(2, 2))
 FeatureTypes = [FeatureType.TWO_VERTICAL, FeatureType.TWO_HORIZONTAL,
                 FeatureType.THREE_VERTICAL, FeatureType.THREE_HORIZONTAL, FeatureType.FOUR]
 
@@ -83,3 +83,11 @@ class HaarLikeFeature(object):
             return self.weight
         else:
             return -1 * self.weight
+
+
+# index 3 4 5 6
+# 1*2 height width width width
+# 1*3 height width width width
+# 2*1 height heigth heigth width
+# 3*1 height heigth heigth width
+# 2*2 height heigth width width

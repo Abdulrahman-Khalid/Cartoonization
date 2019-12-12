@@ -2,7 +2,8 @@ from multiprocessing import Pool
 from functools import partial
 from tqdm import tqdm
 import numpy as np
-
+from violajones.Utils import save_classifiers
+from constants import classifiersFileName
 from violajones.HaarLikeFeature import HaarLikeFeature
 from violajones.HaarLikeFeature import FeatureTypes
 
@@ -76,9 +77,9 @@ def adaBoostLearn(facesIntegrals, nonFacesIntegrals, minFeatureWidth=1, maxFeatu
         bestFeature = features[bestFeatureIndex]
         # amount of say
         bestFeature.weight = 0.5 * \
-            np.log((1 - bestError) / bestError)  
+            np.log((1 - bestError) / bestError)
         classifiers.append(bestFeature)
-
+        save_classifiers(classifiers, classifiersFileName)
         # update image weights
         weights = np.array(list(map(lambda imgIndex: weights[imgIndex] * np.sqrt((1-bestError)/bestError) if labels[imgIndex]
                                     != votes[imgIndex, bestFeatureIndex] else weights[imgIndex] * np.sqrt(bestError/(1-bestError)), range(imgsTotalCount))))
