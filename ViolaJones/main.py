@@ -42,12 +42,13 @@ def main():
     nonFacesTrainingPath = './DataSet/Training/Small_Data_Set/NonFaces'
     facesTestingPath = './DataSet/Testing/Faces'
     nonFacesTestingPath = './DataSet/Testing/NonFaces'
-    if not os.path.exists(classifiersFileName) or (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'relearn'):
-        minFeatureHeight = 2
-        minFeatureWidth = 2
+    #if not os.path.exists(classifiersFileName) or (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'relearn'):
+    if True:
+        minFeatureHeight = 1
+        minFeatureWidth = 1
         maxFeatureHeight = 24
         maxFeatureWidth = 24
-        classifiersNum = 2
+        classifiersNum = 1000
 
         print('Loading faces training data set...')
         facesTraining = utils.load_images(facesTrainingPath)
