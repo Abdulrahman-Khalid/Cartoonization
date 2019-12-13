@@ -62,7 +62,11 @@ def main():
     elif os.path.exists(c.classifiersFileName):
         print("Loading Classifiers ...")
         classifiers = utils.load_classifiers(c.classifiersFileName)
-        print(len(classifiers),"Classifier are loaded")
+        print(len(classifiers), "Classifier are loaded")
+        f = open(c.classifiersFileASNumbers, "w")
+        for cl in classifiers:
+            f.write(str(cl.featureType) + " " + str(cl.topLeft) + " " + str(cl.width) +
+                    " " + str(cl.height) + " " + str(cl.threshold) + " " + str(cl.polarity) + "\n")
         testClassifiers(classifiers, c.facesTestingPath, c.nonFacesTestingPath)
 
 

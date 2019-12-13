@@ -1,4 +1,5 @@
 classifiersFileName = 'classifiers.pkl'
+classifiersFileASNumbers = 'classifiers.txt'
 facesTrainingPath = './DataSet/Training/Faces'
 nonFacesTrainingPath = './DataSet/Training/NonFaces'
 facesTestingPath = './DataSet/Testing/Faces'

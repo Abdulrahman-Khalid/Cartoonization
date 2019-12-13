@@ -22,6 +22,12 @@ class HaarLikeFeature(object):
         self.bottomRight = (topLeft[0] + width, topLeft[1] + height)
         self.weight = 1
 
+    def __repr__(self):
+        return "HaarLikeFeature()"
+
+    def __str__(self):
+        return "{} {} {} {} {} {}".format(self.featureType, self.topLeft, self.width, self.height, self.threshold, self.polarity)
+
     def get_score(self, integralImg):
         score = 0
         if self.featureType == FeatureType.TWO_VERTICAL:
