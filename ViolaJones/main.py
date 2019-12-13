@@ -60,7 +60,9 @@ def main():
         testClassifiers(classifiers, c.facesTestingPath, c.nonFacesTestingPath)
 
     elif os.path.exists(c.classifiersFileName):
+        print("Loading Classifiers ...")
         classifiers = utils.load_classifiers(c.classifiersFileName)
+        print(len(classifiers),"Classifier are loaded")
         testClassifiers(classifiers, c.facesTestingPath, c.nonFacesTestingPath)
 
 
