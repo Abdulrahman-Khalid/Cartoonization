@@ -36,21 +36,7 @@ def testClassifiers(classifiers, facesTestingPath, nonFacesTestingPath):
 
 
 def main():
-    #     facesTrainingPath = './DataSet/Training/Faces'
-    #     nonFacesTrainingPath = './DataSet/Training/NonFaces'
-    classifiersFileName = 'classifiers.pkl'
-    facesTrainingPath = './DataSet/Training/Small_Data_Set/Faces'
-    nonFacesTrainingPath = './DataSet/Training/Small_Data_Set/NonFaces'
-    facesTestingPath = './DataSet/Testing/Faces'
-    nonFacesTestingPath = './DataSet/Testing/NonFaces'
-    #if not os.path.exists(classifiersFileName) or (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'relearn'):
-    if True:
-        minFeatureHeight = 1
-        minFeatureWidth = 1
-        maxFeatureHeight = 24
-        maxFeatureWidth = 24
-        classifiersNum = 1000
-
+    if not os.path.exists(c.classifiersFileName) or (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'relearn'):
         print('Loading faces training data set...')
         facesTraining = utils.load_images(c.facesTrainingPath)
         facesTrainingIntegral = list(
