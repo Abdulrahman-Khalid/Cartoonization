@@ -23,9 +23,20 @@ def load_images(path):
 
 
 def classifiers_to_classifiers_stages(classifiers):
-    length_to_split = [13] * int(len(classifiers)/13)
-    if(len(classifiers) % 13 != 0):
-        length_to_split.append(len(classifiers) % 13)
+    stages = [13, 21, 41, 51, 61, 71, 78, 51, 101, 111, 121, 131,
+              141, 151, 161, 171, 181, 191, 201, 201, 201, 111,
+              201, 201, 201, 201, 201, 201, 201, 201, 201]
+    length_to_split = []
+    stop = 0
+    for s in stages:
+        if(stop + s > len(classifiers)):
+            length_to_split.append(len(classifiers)-s)
+            break
+        else:
+            length_to_split.append(s)
+    # length_to_split = [13] * int(len(classifiers)/13)
+    # if(len(classifiers) % 13 != 0):
+    #     length_to_split.append(len(classifiers) % 13)
     Inputt = iter(classifiers)
     return [list(islice(Inputt, num)) for num in length_to_split]
 
