@@ -91,7 +91,7 @@ def main():
             # TODO get frame
             # TODO get frameWidth and frameHeight
             # TODO get frameGrayScale
-            iimage = utils.get_integral_image(frameGrayScale)
+            iimage = IImg.get_integral_image(frameGrayScale)
             rects = utils.detect_faces(iimage, frameWidth,
                                        frameHeight, classifiers_stages)
 
