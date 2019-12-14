@@ -68,7 +68,7 @@ def main():
         testClassifiers(classifiers, classifiers_stages,
                         c.facesTestingPath, c.nonFacesTestingPath)
 
-    elif os.path.exists(c.classifiersFileName):
+    elif os.path.exists(c.classifiersFileName) and (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'test'):
         print("Loading Classifiers ...")
         classifiers = utils.load_classifiers(c.classifiersFileName)
         print(len(classifiers), "Classifier are loaded")
@@ -80,6 +80,20 @@ def main():
         # for cl in classifiers:
         #     f.write(str(cl.featureType) + " " + str(cl.topLeft) + " " + str(cl.width) +
         #             " " + str(cl.height) + " " + str(cl.threshold) + " " + str(cl.polarity) + "\n")
+    elif os.path.exists(c.classifiersFileName):
+        print("Loading Classifiers ...")
+        classifiers = utils.load_classifiers(c.classifiersFileName)
+        print(len(classifiers), "Classifier are loaded")
+        classifiers_stages = utils.classifiers_to_classifiers_stages(
+            classifiers)
+        # TODO Run Camera
+        while(True):
+            # TODO get frame
+            # TODO get frameWidth and frameHeight
+            # TODO get frameGrayScale
+            iimage = utils.get_integral_image(frameGrayScale)
+            rects = utils.detect_faces(iimage, frameWidth,
+                                       frameHeight, classifiers_stages)
 
 
 main()
