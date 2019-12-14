@@ -57,9 +57,10 @@ def cascadingIsFace(box, integralImg, classifiers_stages):
             featureResult, new_feature = compute_feature(
                 box, classifier, integralImg)
             s += new_feature.get_vote_cascade(featureResult)
+        # cascading
         if(s < 0):
             return False  # not face don't continue
-    return True
+    return True if s >= 0 else False
 
 
 def detect_faces(frameGray, frameWidth, frameHeight, classifiers_stages):
