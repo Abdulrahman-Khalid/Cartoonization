@@ -1,11 +1,14 @@
 import os
 import pickle
+from itertools import islice
 from functools import partial
 from violajones.HaarLikeFeature import HaarLikeFeature
 from violajones.HaarLikeFeature import FeatureType
+import violajones.IntegralImage as IImg
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
+import constants as c
 
 
 def load_images(path):
@@ -17,6 +20,14 @@ def load_images(path):
             imgArr /= imgArr.max()
             images.append(imgArr)
     return images
+
+
+def classifiers_to_classifiers_stages(classifiers):
+    length_to_split = [13] * int(len(classifiers)/13)
+    if(len(classifiers) % 13 != 0):
+        length_to_split.append(len(classifiers) % 13)
+    Inputt = iter(classifiers)
+    return [list(islice(Inputt, num)) for num in length_to_split]
 
 
 def save_classifiers(classifiers, classifiersFileName):
@@ -37,18 +48,34 @@ def isFaceImgs(integralImgs, classifiers):
     return list(map(partial(isFaceImg, classifiers=classifiers), integralImgs))
 
 
-def casCadingIsFaceImg(integralImg, classifiers):
-    for classifier in classifiers:
-        if classifier.get_vote(integralImg) < 0:
-            return 0
-    return 1
+def cascadingIsFace(box, integralImg, classifiers_stages):
+    s = 0
+    for i in range(len(classifiers_stages)):
+        s += sum([compute_feature(box, classifier, integralImg)
+                  for classifier in classifiers_stages[i]])
+        if(True if s < 0 else False):
+            return False  # not face don't continue
+    return True
 
 
-def casCadingIsFaceImgs(integralImgs, classifiers):
-    return list(map(partial(casCadingIsFaceImg, classifiers=classifiers), integralImgs))
+def detect_faces(frameGray, frameWidth, frameHeight, classifiers_stages):
+    iimage = IImg.get_integral_image(frameGray)
+    rects = []
+    topLeft = (0, 0)
+    bottomRight = (topLeft[0]+c.minSize, topLeft[1]+c.minSize)
+    minFrame = frameWidth if frameWidth < frameHeight else frameHeight
+    for b in range(c.minSize, minFrame+1, c.sizeStep):
+        for w in range(0, frameWidth-b+1, c.stepSizeW):
+            for h in range(0, frameHeight-b+1, c.stepSizeH):
+                topLeft = (h, w)
+                bottomRight = (h+b, w+b)
+                # print("top left: ", topLeft, b)
+                if(cascadingIsFace([b**2, h, w], iimage, classifiers_stages)):
+                    rects.append((topLeft, bottomRight))
+    return rects
 
 
-def compute_feature(self, box, featureChosen, integralImg):
+def compute_feature(box, featureChosen, integralImg):
     # scaling features
     boxSize = box[0]  # area
     # @ TODO the calFeatures file
@@ -60,8 +87,8 @@ def compute_feature(self, box, featureChosen, integralImg):
     scale = np.sqrt(boxSize) / sampleSize
 
     # scaling the i and j of the feature
-    i = round(scale*featureChosen.topleft[1])  # topleft[1] rows
-    j = round(scale*featureChosen.topleft[0])  # topleft[0] cols
+    i = round(scale*featureChosen.topLeft[1])  # topLeft[1] rows
+    j = round(scale*featureChosen.topLeft[0])  # topLeft[0] cols
 
     # abs_i and abs_j will be used to calculate the integral image result
     # indicate the feature position inside the real frame
@@ -192,6 +219,7 @@ def compute_feature(self, box, featureChosen, integralImg):
 
     new_feature = HaarLikeFeature(featureChosen.featureType, (abs_j, abs_i),
                                   width, height, featureChosen.threshold, featureChosen.polarity)
+    print(new_feature)
     score = new_feature.get_score(integralImg)
     # rescale the feature to its original scale
     # multiply the originArea by 2

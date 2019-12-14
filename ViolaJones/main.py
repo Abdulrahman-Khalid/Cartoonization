@@ -6,7 +6,7 @@ import violajones.IntegralImage as IImg
 import constants as c
 
 
-def testClassifiers(classifiers, facesTestingPath, nonFacesTestingPath):
+def testClassifiers(classifiers, classifiers_stages, facesTestingPath, nonFacesTestingPath):
     print('Loading faces testing data set...')
     facesTesting = utils.load_images(c.facesTestingPath)
     facesTestingIntegral = list(
@@ -23,10 +23,15 @@ def testClassifiers(classifiers, facesTestingPath, nonFacesTestingPath):
     print('Testing selected classifiers ...')
     correctFacesCount = 0
     correctNonFacesCount = 0
-    correctFacesCount = sum(utils.isFaceImgs(
-        facesTestingIntegral, classifiers))
-    correctNonFacesCount = len(
-        nonFacesTesting) - sum(utils.isFaceImgs(nonFacesTestingIntegral, classifiers))
+    correctFacesCount = sum(list(len(utils.detect_faces(
+        face, 24, 24, classifiers_stages)) for face in facesTestingIntegral))
+    correctNonFacesCount = len(nonFacesTesting) - sum(list(len(utils.detect_faces(
+        nonFace, 24, 24, classifiers_stages)) for nonFace in nonFacesTestingIntegral))
+
+    # correctFacesCount = sum(utils.isFaceImgs(
+    #     facesTestingIntegral, classifiers))
+    # correctNonFacesCount = len(
+    #     nonFacesTesting) - sum(utils.isFaceImgs(nonFacesTestingIntegral, classifiers))
     print('Accuracy:-\nFaces: ' + str(correctFacesCount) + '/' + str(len(facesTesting))
           + '  (' + str((float(correctFacesCount) / len(facesTesting))
                         * 100) + '%)\nNon Faces: '
@@ -54,18 +59,23 @@ def main():
                                              c.minFeatureHeight, c.maxFeatureHeight, c.minFeatureWidth, c.maxFeatureWidth, c.classifiersNum)
 
         utils.save_classifiers(classifiers, c.classifiersFileName)
-
-        testClassifiers(classifiers, c.facesTestingPath, c.nonFacesTestingPath)
+        classifiers_stages = utils.classifiers_to_classifiers_stages(
+            classifiers)
+        testClassifiers(classifiers, classifiers_stages,
+                        c.facesTestingPath, c.nonFacesTestingPath)
 
     elif os.path.exists(c.classifiersFileName):
         print("Loading Classifiers ...")
         classifiers = utils.load_classifiers(c.classifiersFileName)
         print(len(classifiers), "Classifier are loaded")
-        f = open(c.classifiersFileASNumbers, "w")
-        for cl in classifiers:
-            f.write(str(cl.featureType) + " " + str(cl.topLeft) + " " + str(cl.width) +
-                    " " + str(cl.height) + " " + str(cl.threshold) + " " + str(cl.polarity) + "\n")
-        testClassifiers(classifiers, c.facesTestingPath, c.nonFacesTestingPath)
+        classifiers_stages = utils.classifiers_to_classifiers_stages(
+            classifiers)
+        testClassifiers(classifiers, classifiers_stages,
+                        c.facesTestingPath, c.nonFacesTestingPath)
+        # f = open(c.classifiersFileASNumbers, "w")
+        # for cl in classifiers:
+        #     f.write(str(cl.featureType) + " " + str(cl.topLeft) + " " + str(cl.width) +
+        #             " " + str(cl.height) + " " + str(cl.threshold) + " " + str(cl.polarity) + "\n")
 
 
 main()
