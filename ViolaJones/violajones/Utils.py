@@ -49,6 +49,7 @@ def isFaceImgs(integralImgs, classifiers):
 
 
 def cascadingIsFace(box, integralImg, classifiers_stages):
+    # return True if sum([classifier.get_vote(integralImg) for classifier in classifiers_stages]) >= 0 else False
     s = 0
     for stage in classifiers_stages:
         # s += sum([classifier.get_vote_cascade(compute_feature(box, classifier, integralImg))
@@ -63,8 +64,7 @@ def cascadingIsFace(box, integralImg, classifiers_stages):
     return True if s >= 0 else False
 
 
-def detect_faces(frameGray, frameWidth, frameHeight, classifiers_stages):
-    iimage = IImg.get_integral_image(frameGray)
+def detect_faces(iimage, frameWidth, frameHeight, classifiers_stages):
     rects = []
     topLeft = (0, 0)
     bottomRight = (topLeft[0]+c.minSize, topLeft[1]+c.minSize)
