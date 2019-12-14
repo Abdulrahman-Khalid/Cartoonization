@@ -29,9 +29,9 @@ def testClassifiers(classifiers, classifiers_stages, facesTestingPath, nonFacesT
         nonFace, 24, 24, classifiers_stages)) for nonFace in nonFacesTestingIntegral))
 
     # correctFacesCount = sum(utils.isFaceImgs(
-    #     facesTestingIntegral, classifiers))
+    #     facesTestingIntegral, classifiers_stages))
     # correctNonFacesCount = len(
-    #     nonFacesTesting) - sum(utils.isFaceImgs(nonFacesTestingIntegral, classifiers))
+    #     nonFacesTesting) - sum(utils.isFaceImgs(nonFacesTestingIntegral, classifiers_stages))
     print('Accuracy:-\nFaces: ' + str(correctFacesCount) + '/' + str(len(facesTesting))
           + '  (' + str((float(correctFacesCount) / len(facesTesting))
                         * 100) + '%)\nNon Faces: '

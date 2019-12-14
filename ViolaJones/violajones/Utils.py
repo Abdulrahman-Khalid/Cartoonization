@@ -50,10 +50,14 @@ def isFaceImgs(integralImgs, classifiers):
 
 def cascadingIsFace(box, integralImg, classifiers_stages):
     s = 0
-    for i in range(len(classifiers_stages)):
-        s += sum([compute_feature(box, classifier, integralImg)
-                  for classifier in classifiers_stages[i]])
-        if(True if s < 0 else False):
+    for stage in classifiers_stages:
+        # s += sum([classifier.get_vote_cascade(compute_feature(box, classifier, integralImg))
+        #           for classifier in classifiers_stages[i]])
+        for classifier in stage:
+            featureResult, new_feature = compute_feature(
+                box, classifier, integralImg)
+            s += new_feature.get_vote_cascade(featureResult)
+        if(s < 0):
             return False  # not face don't continue
     return True
 
@@ -87,8 +91,8 @@ def compute_feature(box, featureChosen, integralImg):
     scale = np.sqrt(boxSize) / sampleSize
 
     # scaling the i and j of the feature
-    i = round(scale*featureChosen.topLeft[1])  # topLeft[1] rows
-    j = round(scale*featureChosen.topLeft[0])  # topLeft[0] cols
+    i = int(scale*featureChosen.topLeft[1] + 0.5)  # topLeft[1] rows
+    j = int(scale*featureChosen.topLeft[0] + 0.5)  # topLeft[0] cols
 
     # abs_i and abs_j will be used to calculate the integral image result
     # indicate the feature position inside the real frame
@@ -97,23 +101,22 @@ def compute_feature(box, featureChosen, integralImg):
 
     # getting the haar feature width and height
     # we will check on the feature pattern to get the width
-    isHoriztonal = featureChosen.featureType == FeatureType.THREE_HORIZONTAL or featureChosen.featureType == FeatureType.TWO_HORIZONTAL
-    isFour = featureChosen.featureType == FeatureType.FOUR
-    width = featureChosen.width*3 if isHoriztonal else featureChosen.width
-    width += featureChosen.width if isFour else 0  # as feature five width is at 5,6
-    # we will check on the feature pattern to get the height
-    height = featureChosen.height if isHoriztonal else featureChosen.height + \
-        featureChosen.width
-    # feature five height is at 3,4 while feature three and four their heights is at 3,4,5
-    # vertical features
-    height += featureChosen.height if not(isFour or isHoriztonal) else 0
-
+    width = featureChosen.width
+    # if(featureChosen.featureType == FeatureType.THREE_HORIZONTAL):
+    #     width *= 3
+    # elif (featureChosen.featureType == FeatureType.TWO_HORIZONTAL or featureChosen.featureType == FeatureType.FOUR):
+    #     width *= 2
+    height = featureChosen.height
+    # if(featureChosen.featureType == FeatureType.THREE_VERTICAL):
+    #     height *= 3
+    # elif (featureChosen.featureType == FeatureType.TWO_VERTICAL or featureChosen.featureType == FeatureType.FOUR):
+    #     height *= 2
     # original area of the feature
     originArea = width*height
 
     # scaling the width and the height of the feature
-    width = round(scale*width)
-    height = round(scale*height)
+    width = int(scale*width + 0.5)
+    height = int(scale*height + 0.5)
 
     # scaling the feature pattern one i.e. 1x2 feature
     if(featureChosen.featureType == FeatureType.TWO_HORIZONTAL):
@@ -121,15 +124,12 @@ def compute_feature(box, featureChosen, integralImg):
         the height of the feature may exceeds the box's size - i as
         boxSize - i is the maximum side the feature's height can hold
         '''
-        height = height if height < (
-            np.sqrt(boxSize) - i) else (np.sqrt(boxSize) - i)
 
         '''
         the width of the feature may exceeds the box's size - j as
         boxSize - j is the maximum side the feature's width can hold
         '''
         # we should make sure that width is divisible by 2 after scaling
-        width = width if width % 2 == 0 else width + 1
 
         while (width > np.sqrt(boxSize) - j):
             width -= 2
@@ -140,12 +140,6 @@ def compute_feature(box, featureChosen, integralImg):
         the height of the feature may exceeds the box's size - i as
         boxSize - i is the maximum side the feature's height can hold
         '''
-        height = height if height < (
-            np.sqrt(boxSize) - i) else (np.sqrt(boxSize) - i)
-        # we should make sure that width is divisible by 3 after scaling
-        width = width if width % 3 == 0 else (
-            (width + 2 if width % 3 == 1 else width + 1))
-
         '''
         the width of the feature may exceeds the box's size - j as
         boxSize - j is the maximum side the feature's width can hold
@@ -156,41 +150,21 @@ def compute_feature(box, featureChosen, integralImg):
     # scaling the feature pattern one i.e. 2x1 feature
     elif(featureChosen.featureType == FeatureType.TWO_VERTICAL):
 
-        '''
-        the width of the feature may exceeds the box's size - j as
-        boxSize - j is the maximum side the feature's width can hold
-        '''
-        width = width if width < (
-            np.sqrt(boxSize) - j) else (np.sqrt(boxSize) - j)
-
         '''p
         the height of the feature may exceeds the box's size - i as
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 2 after scaling
-        height = height if height % 2 == 0 else height + 1
-
         while (height > np.sqrt(boxSize) - i):
             height -= 2
 
     # scaling the feature pattern one i.e. 3x1 feature
     elif(featureChosen.featureType == FeatureType.THREE_VERTICAL):
-
-        '''
-        the width of the feature may exceeds the box's size - j as
-        boxSize - j is the maximum side the feature's width can hold
-        '''
-        width = width if (width < (np.sqrt(boxSize) - j)
-                          ) else (np.sqrt(boxSize) - j)
-
         '''
         the height of the feature may exceeds the box's size - i as
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 3 after scaling
-        height = height if height % 3 == 0 else (
-            (height + 2 if height % 3 == 1 else height + 1))
-
         while (height > np.sqrt(boxSize) - i):
             height -= 3
 
@@ -202,8 +176,6 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - j is the maximum side the feature's width can hold
         '''
         # we should make sure that width is divisible by 2 after scaling
-        width = width if width % 2 == 0 else width + 1
-
         while (width > np.sqrt(boxSize) - j):
             width -= 2
 
@@ -212,18 +184,16 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 2 after scaling
-        height = height if height % 2 == 0 else height + 1
-
         while (height > np.sqrt(boxSize) - i):
             height -= 2
 
     new_feature = HaarLikeFeature(featureChosen.featureType, (abs_j, abs_i),
                                   width, height, featureChosen.threshold, featureChosen.polarity)
-    print(new_feature)
+    # print(new_feature)
     score = new_feature.get_score(integralImg)
     # rescale the feature to its original scale
     # multiply the originArea by 2
     reScale = originArea/(width*height)
 
     featureResult = score * reScale
-    return featureResult
+    return featureResult, new_feature

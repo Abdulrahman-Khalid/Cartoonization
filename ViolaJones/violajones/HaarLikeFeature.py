@@ -90,6 +90,11 @@ class HaarLikeFeature(object):
         else:
             return -1 * self.weight
 
+    def get_vote_cascade(self, score):
+        if score < self.polarity * self.threshold:
+            return self.weight
+        else:
+            return -1 * self.weight
 
 # index 3 4 5 6
 # 1*2 height width width width
