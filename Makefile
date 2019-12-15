@@ -1,18 +1,19 @@
-algo=dlib
+run-violajones:
+	python3.7 run-live.py violajones
 
-run:
-	python3.7 main.py --model model/shape_predictor.dat --algo ${algo}
+run-dlib:
+	python3.7 run-live.py dlib
 
-init:
-	@if ! [ `command -v  python3.7` ]; then\
-		sudo apt-get update && sudo apt-get install -y  python3.7;\
-	fi
+run-tests:
+	python3.7 run-tests.py
 
-	@echo install python requirements
-	pip3.7 install --user --verbose --timeout 180 \
-					opencv-python imutils datetime argparse dlib PyQt5
+relearn:
+	python3.7 relearn.py
 
-dlib:
+install-requirements:
+	python3 -m pip install --user --verbose --timeout 180 -r requirements.txt
+
+install-dlib:
 	wget http://dlib.net/files/dlib-19.18.tar.bz2
 
 	tar xjf dlib-19.18.tar.bz2
@@ -23,6 +24,3 @@ dlib:
 
 	cd ..
 	rm -rf dlib-19.18
-
-ui:
-	pyuic5 -x ui.ui -o gen_ui.py
