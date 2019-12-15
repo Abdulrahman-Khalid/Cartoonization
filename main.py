@@ -14,7 +14,135 @@ from PyQt5 import QtGui
 import dlib_detector
 import custom_detector
 import gen_ui
-import emoji_window
+
+
+def cut_src(src, x, y, xmax, ymax):
+    if x > xmax or y > ymax:
+        return None
+
+    if x < 0:
+        src = src[-x:, :, :]
+        x = 0
+
+    if y < 0:
+        src = src[:, -y:, :]
+        y = 0
+
+    if x+src.shape[0] > xmax:
+        src = src[:xmax-x, :, :]
+
+    if y+src.shape[1] > ymax:
+        src = src[:, :ymax-y, :]
+
+    if src.shape[0] == 0 or src.shape[1] == 0:
+        return None
+    return src
+
+
+def cut_dst(dst, src, x, y):
+    x, y = max(x, 0), max(y, 0)
+    return dst[x:x+src.shape[0], y:y+src.shape[1], :]
+
+
+def img_blit(dst, src, cx=0, cy=0):
+    x, y = cx-src.shape[0]//2, cy-src.shape[1]//2
+    x, y = min(x, dst.shape[0]), min(y, dst.shape[1])
+
+    # cut src
+    src = cut_src(src, x, y, dst.shape[0], dst.shape[1])
+
+    if src is None:
+        return dst
+
+    # cut dst
+    final_dst = dst
+    dst = cut_dst(dst, src, x, y)
+
+    # alpha
+    alpha_img = src[:, :, 3] / 255
+    alpha_dst = 1 - alpha_img
+
+    # blit
+    for c in range(0, 3):
+        dst[:, :, c] = (alpha_img * src[:, :, c] +
+                        alpha_dst * dst[:, :, c])
+
+    return final_dst
+
+
+def img_scale(img, fx, fy):
+    return cv2.resize(img, None, fx=fx if fx != 0 else 1, fy=fy if fy != 0 else 1, interpolation=cv2.INTER_CUBIC)
+
+
+def img_rotate_center(mat, angle):
+    angle = -math.degrees(angle)
+
+    height, width = mat.shape[:2]  # image shape has 3 dimensions
+    height, width = mat.shape[:2]  # image shape has 3 dimensions
+    # getRotationMatrix2D needs coordinates in reverse order (width, height) compared to shape
+    image_center = (width/2, height/2)
+    rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1.)
+
+    # rotation calculates the cos and sin, taking absolutes of those.
+    abs_cos = abs(rotation_mat[0, 0])
+    abs_cos = abs(rotation_mat[0, 0])
+    abs_sin = abs(rotation_mat[0, 1])
+    # find the new width and height bounds
+    bound_w = int(height * abs_sin + width * abs_cos)
+    bound_h = int(height * abs_cos + width * abs_sin)
+
+    # subtract old image center (bringing image back to origo) and adding the new image center coordinates
+    rotation_mat[0, 2] += bound_w/2 - image_center[0]
+    rotation_mat[1, 2] += bound_h/2 - image_center[1]
+
+    # rotate image with the new bounds and translated rotation matrix
+    return cv2.warpAffine(mat, rotation_mat, (bound_w, bound_h))
+
+
+def get_slope(a, b):
+    ax, ay = a
+    bx, by = b
+    if ay == by:
+        return 0
+    return (ay-by)/(ax-bx)
+
+
+def get_dist(a, b):
+    ax, ay = a
+    bx, by = b
+    return math.sqrt((ay-by)**2+(ax-bx)**2)
+
+
+def get_half(a, b):
+    ax, ay = a
+    bx, by = b
+    return ((ay+by)//2, (ax+bx)//2)
+
+
+def put_sticker(image, faces, p_glasses, p_mustache, p_hat, draw_hat, draw_glasses, draw_mustache):
+    for face in faces:
+        dst = get_dist(face[36], face[45])
+        slope = get_slope(face[46-1], face[43-1])
+
+        if draw_glasses:
+            scl = dst/150
+            glasses = img_rotate_center(p_glasses.copy(), slope)
+            glasses = img_scale(glasses, scl, scl)
+            image = img_blit(image, glasses, face[27][1], face[27][0])
+
+        if draw_mustache:
+            scl = dst/470
+            mustache = img_rotate_center(p_mustache.copy(), slope)
+            mustache = img_scale(mustache, scl, scl)
+            image = img_blit(image, mustache, *get_half(face[51], face[33]))
+
+        if draw_hat:
+            scl = dst/800
+            hat = img_rotate_center(p_hat.copy(), slope)
+            hat = img_scale(hat, scl, scl)
+            image = img_blit(image, hat, int(face[27][1]-dst), face[27][0])
+
+    return image
 
 
 def cirle_features(frame, faces):
@@ -89,8 +217,18 @@ class CartoonizationWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.image = QtGui.QImage()
 
-    def update_img(self, image, gray_image, faces):
-        # TODO: edit image with stickers
+        self.glasses = cv2.imread('data/glasses.png', cv2.IMREAD_UNCHANGED)
+        self.mustache = cv2.imread('data/mustache.png', cv2.IMREAD_UNCHANGED)
+        self.hat = cv2.imread('data/santas_hat.png', cv2.IMREAD_UNCHANGED)
+
+        assert self.glasses.shape[2] == 4
+        assert self.mustache.shape[2] == 4
+        assert self.hat.shape[2] == 4
+
+    def update_img(self, image, gray_image, faces, draw_hat, draw_glasses, draw_mustache):
+        image = put_sticker(
+            image, faces, self.glasses, self.mustache, self.hat, draw_hat, draw_glasses, draw_mustache)
+
         self.image = ndarray_to_qimage(image)
 
         if self.image.size() != self.size():
@@ -105,17 +243,17 @@ class CartoonizationWidget(QtWidgets.QWidget):
 
 
 class Window(gen_ui.Ui_MainWindow):
-    def __init__(self, args, emoji_world, detector):
+    def __init__(self, args, detector):
         self.parent = QtWidgets.QMainWindow()
 
         self.setupUi(self.parent)
 
         self.detector = detector
+        self.last_faces = [[(0, 0)] * 68]
 
         # widgets
         self.widgetFrame = FeaturesFrameWidget(self.widgetFrame)
         self.widget2D = CartoonizationWidget(self.widget2D)
-        self.emoji_world = emoji_world
 
         # fps calculations
         self.fps_sum = 0
@@ -127,6 +265,10 @@ class Window(gen_ui.Ui_MainWindow):
         self.vr = VideoRecorder()
         self.vr.image_data.connect(self.image_data_slot)
         self.vr.start_recording()
+
+        self.hat.setChecked(True)
+        self.glasses.setChecked(True)
+        self.mustache.setChecked(True)
 
     def show(self):
         self.parent.show()
@@ -141,11 +283,13 @@ class Window(gen_ui.Ui_MainWindow):
 
         # detection
         faces = self.detector.extract_faces(gray_frame)
+        if len(faces) > 0:
+            self.last_faces = faces
 
         # update widgets
-        self.widgetFrame.update_img(frame.copy(), faces)
-        self.widget2D.update_img(frame.copy(), gray_frame.copy(), faces)
-        self.emoji_world.update_img(gray_frame, faces)
+        self.widgetFrame.update_img(frame.copy(), self.last_faces)
+        self.widget2D.update_img(
+            frame.copy(), gray_frame.copy(), self.last_faces, self.hat.isChecked(), self.glasses.isChecked(), self.mustache.isChecked())
 
         self.update_fps(time_start)
 
@@ -177,16 +321,9 @@ detector = detector(args.model)
 # define app
 app = QtWidgets.QApplication(sys.argv)
 
-em_window = QtWidgets.QMainWindow()
-em_window.setGeometry(-1, -1, 411, 301)
-emoji_world = emoji_window.MyWorld()
-pandaWidget = emoji_window.QPanda3DWidget(emoji_world)
-em_window.setCentralWidget(pandaWidget)
-
-ui = Window(args, emoji_world, detector)
+ui = Window(args, detector)
 
 # run app
-em_window.show()
 ui.show()
 exit_code = app.exec_()
 print()  # to keep the fps line
