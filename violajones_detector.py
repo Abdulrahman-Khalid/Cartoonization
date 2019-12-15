@@ -27,7 +27,8 @@ class ViolaJonesDetector:
 
     def detect(self, frame):
         ''' Given grayscale-frame return [bounding-box], where bounding-box is ((x0, y0), (x1, y1)) '''
-        width, height = frame.shape[:2]
+        height, width = frame.shape[:2]
+        print(f'height = {height}, width = {width}')
         iimage = IImg.get_integral_image(frame)
 
         return utils.detect_faces(iimage, width,
