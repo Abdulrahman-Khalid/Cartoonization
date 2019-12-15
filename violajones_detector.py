@@ -7,6 +7,11 @@ import violajones.IntegralImage as IImg
 import constants as c
 
 
+def bbox_to_dlib_rectangle(bbox: ((int, int), (int, int))) -> dlib.rectangle:
+    (left, top), (right, bottom) = bbox
+    return dlib.rectangle(left, top, right, bottom)
+
+
 class ViolaJonesDetector:
     def __init__(self, model_path: str):
         print('Inintailizing ViolaJones custom detector...')
@@ -28,7 +33,6 @@ class ViolaJonesDetector:
     def detect(self, frame):
         ''' Given grayscale-frame return [bounding-box], where bounding-box is ((x0, y0), (x1, y1)) '''
         height, width = frame.shape[:2]
-        print(f'height = {height}, width = {width}')
         iimage = IImg.get_integral_image(frame)
 
         return utils.detect_faces(iimage, width,
@@ -36,4 +40,4 @@ class ViolaJonesDetector:
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''
-        return [face_utils.shape_to_np(self.dlib_segmentation(frame, bbox)) for bbox in self.detect(frame)]
+        return [face_utils.shape_to_np(self.dlib_segmentation(frame, bbox_to_dlib_rectangle(bbox))) for bbox in self.detect(frame)]
