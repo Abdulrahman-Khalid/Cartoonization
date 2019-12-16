@@ -3,7 +3,6 @@ import numpy as np
 from imutils import face_utils
 
 import violajones.Utils as utils
-import violajones.IntegralImage as IImg
 import constants as c
 
 
@@ -32,11 +31,7 @@ class ViolaJonesDetector:
 
     def detect(self, frame):
         ''' Given grayscale-frame return [bounding-box], where bounding-box is ((x0, y0), (x1, y1)) '''
-        height, width = frame.shape[:2]
-        iimage = IImg.get_integral_image(frame)
-
-        return utils.detect_faces(iimage, width,
-                                  height, self.classifiers_stages)
+        return utils.detect_faces(frame, self.classifiers_stages, bbox_to_dlib_rectangle)
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''

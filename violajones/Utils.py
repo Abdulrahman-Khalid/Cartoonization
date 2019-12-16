@@ -77,14 +77,18 @@ def cascadingIsFace(box, integralImg, classifiers_stages):
     return True if s >= 0 else False
 
 
-def detect_faces(iimage, frameWidth, frameHeight, classifiers_stages):
+def detect_faces(frame, frameWidth, frameHeight, classifiers_stages, bbox_to_dlib_rectangle):
+    height, width = frame.shape[:2]
+    iimage = IImg.get_integral_image(frame)
+
     rects = []
     minFrame = frameWidth if frameWidth < frameHeight else frameHeight
     for b in range(c.minSize, minFrame, c.sizeStep):
         for w in range(0, frameWidth-b, c.stepSizeW):
             for h in range(0, frameHeight-b, c.stepSizeH):
                 if(cascadingIsFace([b**2, h, w], iimage, classifiers_stages)):
-                    rects.append(((h, w), (h+b, w+b)))
+                    rects.append(bbox_to_dlib_rectangle(((h, w), (h+b, w+b))))
+
     return rects
 
 
