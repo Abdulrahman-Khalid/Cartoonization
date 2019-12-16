@@ -252,7 +252,6 @@ class Window(gen_ui.Ui_MainWindow):
         self.setupUi(self.parent)
 
         self.detector = detector
-        self.last_faces = [[(0, 0)] * 68]
 
         # widgets
         self.widgetFrame = FeaturesFrameWidget(self.widgetFrame)
@@ -284,15 +283,17 @@ class Window(gen_ui.Ui_MainWindow):
             500/frame.shape[1]*frame.shape[0])), interpolation=cv2.INTER_AREA)
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        # detection
-        faces = self.detector.extract_faces(gray_frame)
-        if len(faces) > 0:
-            self.last_faces = faces
+        try:
+            # detection
+            faces = self.detector.extract_faces(gray_frame)
 
-        # update widgets
-        self.widgetFrame.update_img(frame.copy(), self.last_faces)
-        self.widget2D.update_img(
-            frame.copy(), gray_frame.copy(), self.last_faces, self.hat.isChecked(), self.glasses.isChecked(), self.mustache.isChecked())
+            # update widgets
+            self.widgetFrame.update_img(frame.copy(), faces)
+            self.widget2D.update_img(
+                frame.copy(), gray_frame.copy(), faces, self.hat.isChecked(), self.glasses.isChecked(), self.mustache.isChecked())
+
+        except:
+            pass
 
         self.update_fps(time_start)
 
