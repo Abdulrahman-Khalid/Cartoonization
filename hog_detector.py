@@ -4,6 +4,7 @@ import skimage
 from imutils import face_utils
 from skimage import feature
 import joblib
+import cv2
 
 import constants
 
@@ -74,7 +75,7 @@ def _non_max_suppression_slow(boxes, overlapThresh):
 
 
 def _sliding_window(img, patch_size=(62, 47),
-                    istep=2, jstep=2, scale=1.0):
+                    istep=15, jstep=15, scale=1.0):
     Ni, Nj = (int(scale * s) for s in patch_size)
     for i in range(0, img.shape[0] - Ni, istep):
         for j in range(0, img.shape[1] - Ni, jstep):
@@ -98,7 +99,7 @@ def _detect_with_hog(model, gray_frame):
 
 
 def _bbox_to_dlib_rectangle(bbox: ((int, int), (int, int))) -> dlib.rectangle:
-    (left, top), (right, bottom) = bbox
+    left, top, right, bottom = bbox
     return dlib.rectangle(left, top, right, bottom)
 
 
@@ -111,8 +112,10 @@ class HogDetector:
 
     def detect(self, frame):
         ''' Given grayscale-frame return [bounding-box], where bounding-box is ((x0, y0), (x1, y1)) '''
+        frame = cv2.resize(frame, (160, 120), interpolation=cv2.INTER_CUBIC)
         return _detect_with_hog(self.hog_model, frame)
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''
-        return [face_utils.shape_to_np(self.dlib_segmentation(frame, _bbox_to_dlib_rectangle(rect))) for rect in self.detect(frame)]
+        rects = [_bbox_to_dlib_rectangle(rect) for rect in self.detect(frame)]
+        return [face_utils.shape_to_np(self.dlib_segmentation(frame, rect)) for rect in rects], rects
