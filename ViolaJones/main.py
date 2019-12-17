@@ -118,35 +118,7 @@ def main():
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     elif os.path.exists(c.classifiersFileName):
-        print("Loading Classifiers ...")
-        classifiers_stages = utils.load_classifiers(c.classifiersFileName)
-        print(len(classifiers_stages), "stages are loaded")
-        test_img = np.zeros((360, 360))
-        test_img[0:180, :] = 255
-        # test_img = test_img.astype('uint8')
-        print("max", np.max(test_img))
-        print("max", np.min(test_img))
-        normalized_img = utils.normalize_image(test_img)
-        iimage = IImg.get_integral_image(normalized_img)
-        frameWidth = test_img.shape[1]
-        frameHeight = test_img.shape[0]
-        rects = utils.detect_faces(iimage, frameWidth,
-                                   frameHeight, classifiers_stages)
-        new_rects = utils.pickBest(rects)
-        modifiedImage = np.copy(test_img)
-        print("rect ", len(rects))
-        # for i in range(len(rects)):
-        #     area = abs(rects[i][0][0]-rects[i][1][0])**2
-        #     h = rects[i][0][0]
-        #     w = rects[i][0][1]
-        #     if(not utils.doubleCheckIsFace([area, h, w], iimage, classifiers_stages)):
-        #         rects.pop(i)
-        for rect in list(rects[0]):
-            modifiedImage = cv2.rectangle(
-                test_img, (rect[0], rect[1]), (rect[2], rect[3]), 125, 2)
-        cv2.imshow("Test", modifiedImage)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        print("Main ...")
 
 
 main()

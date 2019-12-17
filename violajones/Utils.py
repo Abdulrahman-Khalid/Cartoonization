@@ -89,6 +89,17 @@ def detect_faces(iimage, frameWidth, frameHeight, classifiers_stages, bbox_to_dl
                 if(cascadingIsFace([b**2, h, w], iimage, classifiers_stages)):
                     rects.append(bbox_to_dlib_rectangle(((h, w), (h+b, w+b))))
 
+    return rects
+
+
+def detect_faces_non_max_supp(iimage, frameWidth, frameHeight, classifiers_stages):
+    rects = []
+    minFrame = frameWidth if frameWidth < frameHeight else frameHeight
+    for b in range(c.minSize, minFrame+1, c.sizeStep):
+        for w in range(0, frameWidth-b+1, c.stepSizeW):
+            for h in range(0, frameHeight-b+1, c.stepSizeH):
+                if(cascadingIsFace([b**2, h, w], iimage, classifiers_stages)):
+                    rects.append((h, w, h+b, w+b))
     return np.array(rects)
 
 

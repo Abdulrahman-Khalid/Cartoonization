@@ -20,7 +20,7 @@ maxFeatureWidth = 18
 classifiersNum = 2000
 
 # return rects
-stepSizeW = 20
-stepSizeH = 20
+stepSizeW = 100
+stepSizeH = 100
 minSize = 24
-sizeStep = 6
+sizeStep = 50
