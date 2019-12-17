@@ -13,5 +13,5 @@ classifiersNum = 2000
 # return rects
 stepSizeW = 50
 stepSizeH = 50
-minSize = 100
+minSize = 24
 sizeStep = 10
