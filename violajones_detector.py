@@ -3,6 +3,7 @@ import numpy as np
 from imutils import face_utils
 
 import violajones.Utils as utils
+import violajones.IntegralImage as IImg
 from hog_detector import _non_max_suppression
 import constants as c
 
@@ -29,11 +30,17 @@ class ViolaJonesDetector:
 
     def detect(self, frame):
         ''' Given grayscale-frame return [bounding-box], where bounding-box is ((x0, y0), (x1, y1)) '''
-        height, width = frame.shape[:2]
-        return utils.detect_faces(frame, width, height, self.classifiers_stages, None)
+        iimage = IImg.get_integral_image(frame)
+        frameWidth = frame.shape[1]
+        frameHeight = frame.shape[0]
+        rects = utils.detect_faces_non_max_supp(iimage, frameWidth,
+                                                frameHeight, self.classifiers_stages)
+        rects = utils.non_max_supp(rects)
+        return rects
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''
-        rects = _non_max_suppression(self.detect(frame), .3)
+        # rects = _non_max_suppression(self.detect(frame), .3)
+        rects = self.detect(frame)
         rects = [_bbox_to_dlib_rectangle(bbox) for bbox in rects]
         return [face_utils.shape_to_np(self.dlib_segmentation(frame, rect)) for rect in rects], rects
