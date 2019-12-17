@@ -1,7 +1,7 @@
 import violajones.Utils as utils
 import violajones.IntegralImage as IImg
 import constants as c
-
+from violajones_detector import _bbox_to_dlib_rectangle
 
 print("Loading Classifiers...")
 classifiers = utils.load_classifiers(c.classifiersFileName)
@@ -26,9 +26,9 @@ correctFacesCount = 0
 correctNonFacesCount = 0
 
 correctFacesCount = sum(list(len(utils.detect_faces(
-    face, 24, 24, classifiers_stages)) for face in facesTestingIntegral))
+    face, 24, 24, classifiers_stages, _bbox_to_dlib_rectangle)) for face in facesTestingIntegral))
 correctNonFacesCount = len(nonFacesTesting) - sum(list(len(utils.detect_faces(
-    nonFace, 24, 24, classifiers_stages)) for nonFace in nonFacesTestingIntegral))
+    nonFace, 24, 24, classifiers_stages, _bbox_to_dlib_rectangle)) for nonFace in nonFacesTestingIntegral))
 
 print('Accuracy:-\nFaces: ' + str(correctFacesCount) + '/' + str(len(facesTesting))
       + '  (' + str((float(correctFacesCount) / len(facesTesting))
