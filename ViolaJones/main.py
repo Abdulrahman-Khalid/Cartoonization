@@ -82,33 +82,69 @@ def main():
         # for cl in classifiers:
         #     f.write(str(cl.featureType) + " " + str(cl.topLeft) + " " + str(cl.width) +
         #             " " + str(cl.height) + " " + str(cl.threshold) + " " + str(cl.polarity) + "\n")
-    elif os.path.exists(c.classifiersFileName):
+    elif os.path.exists(c.classifiersFileName) and (len(sys.argv) >= 2 and sys.argv[len(sys.argv)-1] == 'me'):
         print("Loading Classifiers ...")
-        classifiers = utils.load_classifiers(c.classifiersFileName)
-        print(len(classifiers), "Classifier are loaded")
-        classifiers_stages = utils.classifiers_to_classifiers_stages(
-            classifiers)
-        img = cv2.imread('./test.jpg')
-        frame = cv2.resize(img, (360,360), interpolation = cv2.INTER_AREA)
+        classifiers_stages = utils.load_classifiers(c.classifiersFileName)
+        print(len(classifiers_stages), "stages are loaded")
+        img = cv2.imread('./test4.jpg')
+        frame = cv2.resize(img, (360, 360), interpolation=cv2.INTER_AREA)
+        frame = np.copy(img)
         frameGrayScale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # frameGrayScale = frameGrayScale.astype('uint8')
+        print("max: ", np.max(frameGrayScale))
+        print("min: ", np.min(frameGrayScale))
+        # mean = frameGrayScale.mean()
+        # std = frameGrayScale.std()
+        # normalized_img = (frameGrayScale - mean)/std
         iimage = IImg.get_integral_image(frameGrayScale)
         frameWidth = frameGrayScale.shape[1]
         frameHeight = frameGrayScale.shape[0]
-        rects = utils.detect_faces(iimage, frameWidth,
+        rects = utils.detect_faces(frameGrayScale, iimage, frameWidth,
                                    frameHeight, classifiers_stages)
         modifiedImage = np.copy(frame)
-        print("rect ",len(rects))
         # for i in range(len(rects)):
         #     area = abs(rects[i][0][0]-rects[i][1][0])**2
         #     h = rects[i][0][0]
         #     w = rects[i][0][1]
         #     if(not utils.doubleCheckIsFace([area, h, w], iimage, classifiers_stages)):
         #         rects.pop(i)
-        for rect in rects:
+        new_rects = utils.pickBest(rects)
+        print("rect ", len(new_rects))
+        for rect in new_rects:
             modifiedImage = cv2.rectangle(
                 frame, rect[0], rect[1], (0, 255, 0), 2)
         cv2.imshow("Test", modifiedImage)
-        cv2.waitKey(0) 
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    elif os.path.exists(c.classifiersFileName):
+        print("Loading Classifiers ...")
+        classifiers_stages = utils.load_classifiers(c.classifiersFileName)
+        print(len(classifiers_stages), "stages are loaded")
+        test_img = np.zeros((360, 360))
+        test_img[0:180, :] = 255
+        # test_img = test_img.astype('uint8')
+        print("max", np.max(test_img))
+        print("max", np.min(test_img))
+        normalized_img = utils.normalize_image(test_img)
+        iimage = IImg.get_integral_image(normalized_img)
+        frameWidth = test_img.shape[1]
+        frameHeight = test_img.shape[0]
+        rects = utils.detect_faces(iimage, frameWidth,
+                                   frameHeight, classifiers_stages)
+        new_rects = utils.pickBest(rects)
+        modifiedImage = np.copy(test_img)
+        print("rect ", len(rects))
+        # for i in range(len(rects)):
+        #     area = abs(rects[i][0][0]-rects[i][1][0])**2
+        #     h = rects[i][0][0]
+        #     w = rects[i][0][1]
+        #     if(not utils.doubleCheckIsFace([area, h, w], iimage, classifiers_stages)):
+        #         rects.pop(i)
+        for rect in list(rects[0]):
+            modifiedImage = cv2.rectangle(
+                test_img, rect[0], rect[1], 125, 2)
+        cv2.imshow("Test", modifiedImage)
+        cv2.waitKey(0)
         cv2.destroyAllWindows()
 
 
