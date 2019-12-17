@@ -110,8 +110,8 @@ def detect_faces(frameGrayScale, iimage, frameWidth, frameHeight, classifiers_st
                 if(std < 1):
                     continue
                 if(cascadingIsFace([area, h, w], frameGrayScale, iimage, classifiers_stages, std/1e4)):
-                    rects.append(((h, w), (h+b, w+b)))
-    return rects
+                    rects.append((h, w, h+b, w+b))
+    return np.array(rects)
 
 
 def compute_feature(box, featureChosen, frameGrayScale, integralImg):
@@ -262,27 +262,66 @@ def doubleCheckIsFace(box, integralImg, classifiers_stages):
     return True if s >= 0 else False
 
 
-def pickBest(rects):
-    bests = []
-    bests = copy.deepcopy(rects)
+def non_max_supp(rects, overlapThresh=0.3):
+    # if there are no rects, return an empty list
+    if len(rects) == 0:
+        return []
 
-    size = len(rects)
-    # i = 0
-    # while i < size:
-    now = datetime.now()
-    current = int(now.strftime("%S"))
-    randn = current % len(rects)
-    print(randn)
-    thsh = np.sqrt(2) * abs(rects[randn][0][0] - rects[randn][1][0])
-    thsh = 2.5*thsh
-    j = 0
-    while j < size:
-        if j != randn:
-            X_diff = (rects[randn][0][0] - rects[j][0][0])**2
-            Y_diff = (rects[randn][0][1] - rects[j][0][1])**2
-            dist = np.sqrt(X_diff + Y_diff)
-            if dist < thsh:
-                bests.remove(rects[j])
-        j += 1
+    # initialize the list of picked indexes
+    pick = []
 
-    return (bests)
+    # grab the coordinates of the bounding rects
+    x1 = rects[:, 0]
+    y1 = rects[:, 1]
+    x2 = rects[:, 2]
+    y2 = rects[:, 3]
+
+    # compute the area of the bounding rects and sort the bounding
+    # rects by the bottom-right y-coordinate of the bounding box
+    area = (x2 - x1 + 1) * (y2 - y1 + 1)
+    idxs = np.argsort(y2)
+
+    # keep looping while some indexes still remain in the indexes
+    # list
+    while len(idxs) > 0:
+        # grab the last index in the indexes list, add the index
+        # value to the list of picked indexes, then initialize
+        # the suppression list (i.e. indexes that will be deleted)
+        # using the last index
+        last = len(idxs) - 1
+        i = idxs[last]
+        pick.append(i)
+        suppress = [last]
+
+        # loop over all indexes in the indexes list
+        for pos in range(0, last):
+            # grab the current index
+            j = idxs[pos]
+
+            # find the largest (x, y) coordinates for the start of
+            # the bounding box and the smallest (x, y) coordinates
+            # for the end of the bounding box
+            xx1 = max(x1[i], x1[j])
+            yy1 = max(y1[i], y1[j])
+            xx2 = min(x2[i], x2[j])
+            yy2 = min(y2[i], y2[j])
+
+            # compute the width and height of the bounding box
+            w = max(0, xx2 - xx1 + 1)
+            h = max(0, yy2 - yy1 + 1)
+
+            # compute the ratio of overlap between the computed
+            # bounding box and the bounding box in the area list
+            overlap = float(w * h) / area[j]
+
+            # if there is sufficient overlap, suppress the
+            # current bounding box
+            if overlap > overlapThresh:
+                suppress.append(pos)
+
+        # delete all indexes from the index list that are in the
+        # suppression list
+        idxs = np.delete(idxs, suppress)
+
+    # return only the bounding rects that were picked
+    return rects[pick]

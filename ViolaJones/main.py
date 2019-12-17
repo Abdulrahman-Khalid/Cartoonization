@@ -86,7 +86,7 @@ def main():
         print("Loading Classifiers ...")
         classifiers_stages = utils.load_classifiers(c.classifiersFileName)
         print(len(classifiers_stages), "stages are loaded")
-        img = cv2.imread('./test4.jpg')
+        img = cv2.imread('./test1.jpg')
         frame = cv2.resize(img, (360, 360), interpolation=cv2.INTER_AREA)
         frame = np.copy(img)
         frameGrayScale = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -108,11 +108,12 @@ def main():
         #     w = rects[i][0][1]
         #     if(not utils.doubleCheckIsFace([area, h, w], iimage, classifiers_stages)):
         #         rects.pop(i)
-        new_rects = utils.pickBest(rects)
-        print("rect ", len(new_rects))
+        print("rects before non max suppression: ", len(rects))
+        new_rects = utils.non_max_supp(rects)
+        print("rects after non max suppression: ", len(new_rects))
         for rect in new_rects:
             modifiedImage = cv2.rectangle(
-                frame, rect[0], rect[1], (0, 255, 0), 2)
+                frame, (rect[0], rect[1]), (rect[2], rect[3]), (0, 255, 0), 2)
         cv2.imshow("Test", modifiedImage)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
@@ -142,7 +143,7 @@ def main():
         #         rects.pop(i)
         for rect in list(rects[0]):
             modifiedImage = cv2.rectangle(
-                test_img, rect[0], rect[1], 125, 2)
+                test_img, (rect[0], rect[1]), (rect[2], rect[3]), 125, 2)
         cv2.imshow("Test", modifiedImage)
         cv2.waitKey(0)
         cv2.destroyAllWindows()

@@ -48,4 +48,5 @@ def make_classifiers():
     utils.save_classifiers(classfiers_new_new, './classifiers.pkl')
 
 
+make_classifiers()
 make_sure()
