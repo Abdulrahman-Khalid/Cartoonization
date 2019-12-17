@@ -13,4 +13,5 @@ class DlibDetector:
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''
-        return [face_utils.shape_to_np(self.predictor(frame, face)) for face in self.detector(frame, 0)]
+        rects = self.detector(frame, 0)
+        return [face_utils.shape_to_np(self.predictor(frame, face)) for face in rects], rects

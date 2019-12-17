@@ -33,4 +33,5 @@ class ViolaJonesDetector:
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''
-        return [face_utils.shape_to_np(self.dlib_segmentation(frame, rect)) for rect in self.detect(frame)]
+        rects = self.detect(frame)
+        return [face_utils.shape_to_np(self.dlib_segmentation(frame, rect)) for rect in rects], rects

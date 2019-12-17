@@ -154,6 +154,14 @@ def cirle_features(frame, faces):
     return frame
 
 
+def draw_rects(frame, rects):
+    for rect in rects:
+        frame = cv2.rectangle(frame, (rect.left(), rect.top()),
+                              (rect.right(), rect.bottom()), (0, 0, 255), 2)
+
+    return frame
+
+
 def ndarray_to_qimage(image: np.ndarray):
     height, width, colors = image.shape
     bytesPerLine = 3 * width
@@ -198,8 +206,9 @@ class FeaturesFrameWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.image = QtGui.QImage()
 
-    def update_img(self, image, faces):
+    def update_img(self, image, faces, rects):
         self.image = cirle_features(image, faces)
+        self.image = draw_rects(image, rects)
         self.image = ndarray_to_qimage(self.image)
 
         if self.image.size() != self.size():
@@ -286,10 +295,10 @@ class Window(gen_ui.Ui_MainWindow):
 
         try:
             # detection
-            faces = self.detector.extract_faces(gray_frame)
+            faces, rects = self.detector.extract_faces(gray_frame)
 
             # update widgets
-            self.widgetFrame.update_img(frame.copy(), faces)
+            self.widgetFrame.update_img(frame.copy(), faces, rects)
             self.widget2D.update_img(
                 frame.copy(), gray_frame.copy(), faces, self.hat.isChecked(), self.glasses.isChecked(), self.mustache.isChecked())
 
