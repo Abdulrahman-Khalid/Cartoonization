@@ -76,7 +76,8 @@ def cascadingIsFace(box, integralImg, classifiers_stages):
         # cascading
         if(s < 0):
             return False  # not face don't continue
-    return True if s >= 0 else False
+    return True
+    # return True if s >= 0 else False
 
 
 def detect_faces(iimage, frameWidth, frameHeight, classifiers_stages, bbox_to_dlib_rectangle):
@@ -94,13 +95,14 @@ def detect_faces(iimage, frameWidth, frameHeight, classifiers_stages, bbox_to_dl
 def compute_feature(box, featureChosen, integralImg):
     # scaling features
     boxSize = box[0]  # area
+    sideLength = int(np.sqrt(boxSize))
     # @ TODO the calFeatures file
     # featureChosen = features[featureIndex] # features should be from the calFeatures file
 
     areaPos_i = box[1]
     areaPos_j = box[2]
     sampleSize = 24
-    scale = np.sqrt(boxSize) / sampleSize
+    scale = sideLength / sampleSize
 
     # scaling the i and j of the feature
     i = int(scale*featureChosen.topLeft[1] + 0.5)  # topLeft[1] rows
@@ -114,16 +116,8 @@ def compute_feature(box, featureChosen, integralImg):
     # getting the haar feature width and height
     # we will check on the feature pattern to get the width
     width = featureChosen.width
-    # if(featureChosen.featureType == FeatureType.THREE_HORIZONTAL):
-    #     width *= 3
-    # elif (featureChosen.featureType == FeatureType.TWO_HORIZONTAL or featureChosen.featureType == FeatureType.FOUR):
-    #     width *= 2
     height = featureChosen.height
-    # if(featureChosen.featureType == FeatureType.THREE_VERTICAL):
-    #     height *= 3
-    # elif (featureChosen.featureType == FeatureType.TWO_VERTICAL or featureChosen.featureType == FeatureType.FOUR):
-    #     height *= 2
-    # original area of the feature
+
     originArea = width*height
 
     # scaling the width and the height of the feature
@@ -143,7 +137,7 @@ def compute_feature(box, featureChosen, integralImg):
         '''
         # we should make sure that width is divisible by 2 after scaling
 
-        while (width > np.sqrt(boxSize) - j):
+        while (width > sideLength - j):
             width -= 2
 
     # scaling the feature pattern two i.e. 1x3 feature
@@ -156,7 +150,7 @@ def compute_feature(box, featureChosen, integralImg):
         the width of the feature may exceeds the box's size - j as
         boxSize - j is the maximum side the feature's width can hold
         '''
-        while (width > np.sqrt(boxSize) - j):
+        while (width > sideLength - j):
             width -= 3
 
     # scaling the feature pattern one i.e. 2x1 feature
@@ -167,7 +161,7 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 2 after scaling
-        while (height > np.sqrt(boxSize) - i):
+        while (height > sideLength - i):
             height -= 2
 
     # scaling the feature pattern one i.e. 3x1 feature
@@ -177,7 +171,7 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 3 after scaling
-        while (height > np.sqrt(boxSize) - i):
+        while (height > sideLength - i):
             height -= 3
 
     # scaling the feature pattern one i.e. 2x2 feature
@@ -188,7 +182,7 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - j is the maximum side the feature's width can hold
         '''
         # we should make sure that width is divisible by 2 after scaling
-        while (width > np.sqrt(boxSize) - j):
+        while (width > sideLength - j):
             width -= 2
 
         '''
@@ -196,7 +190,7 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 2 after scaling
-        while (height > np.sqrt(boxSize) - i):
+        while (height > sideLength - i):
             height -= 2
 
     new_feature = HaarLikeFeature(featureChosen.featureType, (abs_j, abs_i),
