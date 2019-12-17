@@ -9,7 +9,7 @@ import cv2
 import constants
 
 
-def _non_max_suppression_slow(bboxes, thres):
+def _non_max_suppression(bboxes, thres):
     if len(bboxes) == 0:
         return []
 
@@ -70,7 +70,7 @@ def _detect_with_hog(model, gray_frame, step_i, step_j):
 
     bboxes = np.array([(i, j, i+patch_width, j+patch_height)
                        for i, j in indices[labels == 1]])
-    return _non_max_suppression_slow(bboxes, 0.3)
+    return _non_max_suppression(bboxes, 0.3)
 
 
 def _bbox_to_dlib_rectangle(bbox: ((int, int), (int, int)), scl) -> dlib.rectangle:
