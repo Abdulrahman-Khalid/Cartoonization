@@ -10,8 +10,9 @@ from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 
-import dlib_detector
+import hog_detector
 import violajones_detector
+import dlib_detector
 import gen_ui
 import constants
 
@@ -313,11 +314,18 @@ class Window(gen_ui.Ui_MainWindow):
 
 # parse args
 args = argparse.ArgumentParser()
-args.add_argument('algorithm', choices=['violajones', 'dlib'])
+args.add_argument('algorithm', choices=['hog', 'violajones', 'dlib'])
 args = args.parse_args()
 
 # choose detector
-detector = dlib_detector.DlibDetector if args.algorithm == 'dlib' else violajones_detector.ViolaJonesDetector
+detector = None
+if args.algorithm == 'hog':
+    detector = hog_detector.HogDetector
+elif args.algorithm == 'violajones':
+    detector = violajones_detector.ViolaJonesDetector
+else:
+    detector = dlib_detector.DlibDetector
+
 detector = detector(constants.DLIB_MODEL_PATH)
 
 # define app

@@ -1,3 +1,5 @@
+HOG_MODEL_PATH = './model/hog_model.joblib'
+
 DLIB_MODEL_PATH = './model/shape_predictor.dat'
 
 STICKERS_HAT_PATH = './stickers/santas_hat.png'

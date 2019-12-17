@@ -1,14 +1,17 @@
+run-hog:
+	python3.7 run-live.py hog
+
 run-violajones:
 	python3.7 run-live.py violajones
 
 run-dlib:
 	python3.7 run-live.py dlib
 
-run-tests:
-	python3.7 run-tests.py
+run-violajones-tests:
+	python3.7 run-violajones-tests.py
 
-relearn:
-	python3.7 relearn.py
+violajones-relearn:
+	python3.7 violajones-relearn.py
 
 install-requirements:
 	python3 -m pip install --user --verbose --timeout 180 -r requirements.txt

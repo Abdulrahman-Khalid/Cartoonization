@@ -5,3 +5,5 @@ argparse
 PyQt5 
 tqdm
 dlib 
+joblib
+skimage

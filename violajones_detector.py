@@ -6,7 +6,7 @@ import violajones.Utils as utils
 import constants as c
 
 
-def bbox_to_dlib_rectangle(bbox: ((int, int), (int, int))) -> dlib.rectangle:
+def _bbox_to_dlib_rectangle(bbox: ((int, int), (int, int))) -> dlib.rectangle:
     (left, top), (right, bottom) = bbox
     return dlib.rectangle(left, top, right, bottom)
 
@@ -21,9 +21,6 @@ class ViolaJonesDetector:
         self.classifiers_stages = utils.classifiers_to_classifiers_stages(
             classifiers)
 
-        # initialize dlib’s HOG Linear SVM-based face detector
-        self._dlib_detector_todo = dlib.get_frontal_face_detector()
-
         # load the facial landmark predictor from disk
         self.dlib_segmentation = dlib.shape_predictor(model_path)
 
@@ -32,7 +29,7 @@ class ViolaJonesDetector:
     def detect(self, frame):
         ''' Given grayscale-frame return [bounding-box], where bounding-box is ((x0, y0), (x1, y1)) '''
         height, width = frame.shape[:2]
-        return utils.detect_faces(frame, width, height, self.classifiers_stages, bbox_to_dlib_rectangle)
+        return utils.detect_faces(frame, width, height, self.classifiers_stages, _bbox_to_dlib_rectangle)
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''

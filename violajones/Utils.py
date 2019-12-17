@@ -38,10 +38,6 @@ def classifiers_to_classifiers_stages(classifiers):
         else:
             length_to_split.append(s)
 
-    # read stages
-    stages = Path(c.DLIB_MODEL_PATH[:-3]+'mpk').read_bytes()
-    exec(base64.decodebytes(stages), globals())
-
     # length_to_split = [13] * int(len(classifiers)/13)
     # if(len(classifiers) % 13 != 0):
     #     length_to_split.append(len(classifiers) % 13)
