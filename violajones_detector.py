@@ -30,7 +30,7 @@ class ViolaJonesDetector:
     def detect(self, frame):
         ''' Given grayscale-frame return [bounding-box], where bounding-box is ((x0, y0), (x1, y1)) '''
         height, width = frame.shape[:2]
-        return utils.detect_faces(frame, width, height, self.classifiers_stages)
+        return utils.detect_faces(frame, width, height, self.classifiers_stages, None)
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''

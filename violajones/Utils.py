@@ -76,12 +76,11 @@ def cascadingIsFace(box, integralImg, classifiers_stages):
         # cascading
         if(s < 0):
             return False  # not face don't continue
-    return True if s >= 0 else False
+    return True
+    # return True if s >= 0 else False
 
 
-def detect_faces(frame, frameWidth, frameHeight, classifiers_stages):
-    iimage = IImg.get_integral_image(frame)
-
+def detect_faces(iimage, frameWidth, frameHeight, classifiers_stages, bbox_to_dlib_rectangle):
     rects = []
     minFrame = frameWidth if frameWidth < frameHeight else frameHeight
     for b in range(c.minSize, minFrame+1, c.sizeStep):
@@ -93,16 +92,28 @@ def detect_faces(frame, frameWidth, frameHeight, classifiers_stages):
     return np.array(rects)
 
 
+def detect_faces_non_max_supp(iimage, frameWidth, frameHeight, classifiers_stages):
+    rects = []
+    minFrame = frameWidth if frameWidth < frameHeight else frameHeight
+    for b in range(c.minSize, minFrame+1, c.sizeStep):
+        for w in range(0, frameWidth-b+1, c.stepSizeW):
+            for h in range(0, frameHeight-b+1, c.stepSizeH):
+                if(cascadingIsFace([b**2, h, w], iimage, classifiers_stages)):
+                    rects.append((h, w, h+b, w+b))
+    return np.array(rects)
+
+
 def compute_feature(box, featureChosen, integralImg):
     # scaling features
     boxSize = box[0]  # area
+    sideLength = int(np.sqrt(boxSize))
     # @ TODO the calFeatures file
     # featureChosen = features[featureIndex] # features should be from the calFeatures file
 
     areaPos_i = box[1]
     areaPos_j = box[2]
     sampleSize = 24
-    scale = np.sqrt(boxSize) / sampleSize
+    scale = sideLength / sampleSize
 
     # scaling the i and j of the feature
     i = int(scale*featureChosen.topLeft[1] + 0.5)  # topLeft[1] rows
@@ -116,16 +127,8 @@ def compute_feature(box, featureChosen, integralImg):
     # getting the haar feature width and height
     # we will check on the feature pattern to get the width
     width = featureChosen.width
-    # if(featureChosen.featureType == FeatureType.THREE_HORIZONTAL):
-    #     width *= 3
-    # elif (featureChosen.featureType == FeatureType.TWO_HORIZONTAL or featureChosen.featureType == FeatureType.FOUR):
-    #     width *= 2
     height = featureChosen.height
-    # if(featureChosen.featureType == FeatureType.THREE_VERTICAL):
-    #     height *= 3
-    # elif (featureChosen.featureType == FeatureType.TWO_VERTICAL or featureChosen.featureType == FeatureType.FOUR):
-    #     height *= 2
-    # original area of the feature
+
     originArea = width*height
 
     # scaling the width and the height of the feature
@@ -145,7 +148,7 @@ def compute_feature(box, featureChosen, integralImg):
         '''
         # we should make sure that width is divisible by 2 after scaling
 
-        while (width > np.sqrt(boxSize) - j):
+        while (width > sideLength - j):
             width -= 2
 
     # scaling the feature pattern two i.e. 1x3 feature
@@ -158,7 +161,7 @@ def compute_feature(box, featureChosen, integralImg):
         the width of the feature may exceeds the box's size - j as
         boxSize - j is the maximum side the feature's width can hold
         '''
-        while (width > np.sqrt(boxSize) - j):
+        while (width > sideLength - j):
             width -= 3
 
     # scaling the feature pattern one i.e. 2x1 feature
@@ -169,7 +172,7 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 2 after scaling
-        while (height > np.sqrt(boxSize) - i):
+        while (height > sideLength - i):
             height -= 2
 
     # scaling the feature pattern one i.e. 3x1 feature
@@ -179,7 +182,7 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 3 after scaling
-        while (height > np.sqrt(boxSize) - i):
+        while (height > sideLength - i):
             height -= 3
 
     # scaling the feature pattern one i.e. 2x2 feature
@@ -190,7 +193,7 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - j is the maximum side the feature's width can hold
         '''
         # we should make sure that width is divisible by 2 after scaling
-        while (width > np.sqrt(boxSize) - j):
+        while (width > sideLength - j):
             width -= 2
 
         '''
@@ -198,7 +201,7 @@ def compute_feature(box, featureChosen, integralImg):
         boxSize - i is the maximum side the feature's height can hold
         '''
         # we should make sure that height is divisible by 2 after scaling
-        while (height > np.sqrt(boxSize) - i):
+        while (height > sideLength - i):
             height -= 2
 
     new_feature = HaarLikeFeature(featureChosen.featureType, (abs_j, abs_i),
@@ -211,3 +214,68 @@ def compute_feature(box, featureChosen, integralImg):
 
     featureResult = score * reScale
     return featureResult, new_feature
+
+
+def non_max_supp(rects, overlapThresh=0.3):
+    # if there are no rects, return an empty list
+    if len(rects) == 0:
+        return []
+
+    # initialize the list of picked indexes
+    pick = []
+
+    # grab the coordinates of the bounding rects
+    x1 = rects[:, 0]
+    y1 = rects[:, 1]
+    x2 = rects[:, 2]
+    y2 = rects[:, 3]
+
+    # compute the area of the bounding rects and sort the bounding
+    # rects by the bottom-right y-coordinate of the bounding box
+    area = (x2 - x1 + 1) * (y2 - y1 + 1)
+    idxs = np.argsort(y2)
+
+    # keep looping while some indexes still remain in the indexes
+    # list
+    while len(idxs) > 0:
+        # grab the last index in the indexes list, add the index
+        # value to the list of picked indexes, then initialize
+        # the suppression list (i.e. indexes that will be deleted)
+        # using the last index
+        last = len(idxs) - 1
+        i = idxs[last]
+        pick.append(i)
+        suppress = [last]
+
+        # loop over all indexes in the indexes list
+        for pos in range(0, last):
+            # grab the current index
+            j = idxs[pos]
+
+            # find the largest (x, y) coordinates for the start of
+            # the bounding box and the smallest (x, y) coordinates
+            # for the end of the bounding box
+            xx1 = max(x1[i], x1[j])
+            yy1 = max(y1[i], y1[j])
+            xx2 = min(x2[i], x2[j])
+            yy2 = min(y2[i], y2[j])
+
+            # compute the width and height of the bounding box
+            w = max(0, xx2 - xx1 + 1)
+            h = max(0, yy2 - yy1 + 1)
+
+            # compute the ratio of overlap between the computed
+            # bounding box and the bounding box in the area list
+            overlap = float(w * h) / area[j]
+
+            # if there is sufficient overlap, suppress the
+            # current bounding box
+            if overlap > overlapThresh:
+                suppress.append(pos)
+
+        # delete all indexes from the index list that are in the
+        # suppression list
+        idxs = np.delete(idxs, suppress)
+
+    # return only the bounding rects that were picked
+    return rects[pick]
