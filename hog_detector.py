@@ -9,98 +9,73 @@ import cv2
 import constants
 
 
-def _non_max_suppression_slow(boxes, overlapThresh):
-    # if there are no boxes, return an empty list
-    if len(boxes) == 0:
+def _non_max_suppression_slow(bboxes, thres):
+    if len(bboxes) == 0:
         return []
 
-    # initialize the list of picked indexes
     pick = []
 
-    # grab the coordinates of the bounding boxes
-    x1 = boxes[:, 0]
-    y1 = boxes[:, 1]
-    x2 = boxes[:, 2]
-    y2 = boxes[:, 3]
+    x1 = bboxes[:, 0]
+    y1 = bboxes[:, 1]
+    x2 = bboxes[:, 2]
+    y2 = bboxes[:, 3]
 
-    # compute the area of the bounding boxes and sort the bounding
-    # boxes by the bottom-right y-coordinate of the bounding box
     area = (x2 - x1 + 1) * (y2 - y1 + 1)
     idxs = np.argsort(y2)
 
-    # keep looping while some indexes still remain in the indexes
-    # list
     while len(idxs) > 0:
-        # grab the last index in the indexes list, add the index
-        # value to the list of picked indexes, then initialize
-        # the suppression list (i.e. indexes that will be deleted)
-        # using the last index
         last = len(idxs) - 1
         i = idxs[last]
         pick.append(i)
         suppress = [last]
 
-        # loop over all indexes in the indexes list
         for pos in range(0, last):
-            # grab the current index
             j = idxs[pos]
 
-            # find the largest (x, y) coordinates for the start of
-            # the bounding box and the smallest (x, y) coordinates
-            # for the end of the bounding box
             xx1 = max(x1[i], x1[j])
             yy1 = max(y1[i], y1[j])
             xx2 = min(x2[i], x2[j])
             yy2 = min(y2[i], y2[j])
 
-            # compute the width and height of the bounding box
             w = max(0, xx2 - xx1 + 1)
             h = max(0, yy2 - yy1 + 1)
 
-            # compute the ratio of overlap between the computed
-            # bounding box and the bounding box in the area list
             overlap = float(w * h) / area[j]
 
-            # if there is sufficient overlap, suppress the
-            # current bounding box
-            if overlap > overlapThresh:
+            if overlap > thres:
                 suppress.append(pos)
 
-        # delete all indexes from the index list that are in the
-        # suppression list
         idxs = np.delete(idxs, suppress)
 
-    # return only the bounding boxes that were picked
-    return boxes[pick]
+    return bboxes[pick]
 
 
-def _sliding_window(img, patch_size=(62, 47),
-                    istep=15, jstep=15, scale=1.0):
-    Ni, Nj = (int(scale * s) for s in patch_size)
-    for i in range(0, img.shape[0] - Ni, istep):
-        for j in range(0, img.shape[1] - Ni, jstep):
-            patch = img[i:i + Ni, j:j + Nj]
-            if scale != 1:
-                patch = skimage.transform.resize(patch, patch_size)
+def _apply_window(img, patch_width, patch_height, step_i, step_j):
+    for i in range(0, img.shape[0] - patch_width, step_i):
+        for j in range(0, img.shape[1] - patch_width, step_j):
+            patch = img[i:i + patch_width, j:j + patch_height]
+
             yield (i, j), patch
 
 
-def _detect_with_hog(model, gray_frame):
-    indices, patches = zip(*_sliding_window(gray_frame))
+def _detect_with_hog(model, gray_frame, step_i, step_j):
+    patch_width, patch_height = 62, 47
+
+    indices, patches = zip(
+        *_apply_window(gray_frame, patch_width, patch_height, step_i, step_j))
     patches_hog = np.array([feature.hog(patch) for patch in patches])
 
     labels = model.predict(patches_hog)
     indices = np.array(indices)
 
-    Ni, Nj = (62, 47)
-
-    bboxes = np.array([(i, j, i+Ni, j+Nj) for i, j in indices[labels == 1]])
+    bboxes = np.array([(i, j, i+patch_width, j+patch_height)
+                       for i, j in indices[labels == 1]])
     return _non_max_suppression_slow(bboxes, 0.3)
 
 
-def _bbox_to_dlib_rectangle(bbox: ((int, int), (int, int))) -> dlib.rectangle:
+def _bbox_to_dlib_rectangle(bbox: ((int, int), (int, int)), scl) -> dlib.rectangle:
     left, top, right, bottom = bbox
-    return dlib.rectangle(left, top, right, bottom)
+    return dlib.rectangle(int(left//scl), int(top//scl), int(right//scl), int(bottom//scl))
 
 
 class HogDetector:
@@ -110,12 +85,17 @@ class HogDetector:
         # load the facial landmark predictor from disk
         self.dlib_segmentation = dlib.shape_predictor(model_path)
 
-    def detect(self, frame):
+    def detect(self, frame, scl, step_i, step_j):
         ''' Given grayscale-frame return [bounding-box], where bounding-box is ((x0, y0), (x1, y1)) '''
-        frame = cv2.resize(frame, (160, 120), interpolation=cv2.INTER_CUBIC)
-        return _detect_with_hog(self.hog_model, frame)
+        frame = skimage.transform.rescale(frame.copy(), scl)
+        return _detect_with_hog(self.hog_model, frame, step_i, step_j)
 
     def extract_faces(self, frame: np.ndarray) -> [[(int, int)]]:
         ''' Given gray scale image (2D np array), return array of faces in it '''
-        rects = [_bbox_to_dlib_rectangle(rect) for rect in self.detect(frame)]
+        scale = .29
+        step_vertical = 20
+        step_horizontal = 5
+
+        rects = [_bbox_to_dlib_rectangle(rect, scale)
+                 for rect in self.detect(frame, scale, step_vertical, step_horizontal)]
         return [face_utils.shape_to_np(self.dlib_segmentation(frame, rect)) for rect in rects], rects

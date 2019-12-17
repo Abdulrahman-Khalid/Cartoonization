@@ -6,28 +6,41 @@ Face detection using ViolaJones, face segmentation using `dlib` predictor.
 ![](/scrn.png)
 
 # Install Dependencies:
+
 ## first, install python3.7
-```bash
+
+``` bash
 $ make install-requirements
 ```
 
 ### Note: if `dlib` didn't work, run 
-```bash
+
+``` bash
 $ make install-dlib
 ```
 
-# To run with our own detection algorithm:
-```bash
-$ make
+# To run with hog detection algorithm:
+
+``` bash
+$ make run-hog
+```
+
+# To run with viola-jones detection algorithm:
+
+``` bash
+$ make run-violajones
 ```
 
 # To run with `dlib` detection algorithm:
-```bash
+
+``` bash
 $ make run-dlib
 ```
 
 # To run-tests on images
-```bash
+
+``` bash
 $ unzip ViolaJones/DataSet.zip
-$ make run-tests
+$ make run-violajones-tests
 ```
+

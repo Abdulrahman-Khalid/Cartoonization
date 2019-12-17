@@ -293,17 +293,13 @@ class Window(gen_ui.Ui_MainWindow):
             500/frame.shape[1]*frame.shape[0])), interpolation=cv2.INTER_AREA)
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        try:
-            # detection
-            faces, rects = self.detector.extract_faces(gray_frame)
+        # detection
+        faces, rects = self.detector.extract_faces(gray_frame)
 
-            # update widgets
-            self.widgetFrame.update_img(frame.copy(), faces, rects)
-            self.widget2D.update_img(
-                frame.copy(), gray_frame.copy(), faces, self.hat.isChecked(), self.glasses.isChecked(), self.mustache.isChecked())
-
-        except:
-            pass
+        # update widgets
+        self.widgetFrame.update_img(frame.copy(), faces, rects)
+        self.widget2D.update_img(
+            frame.copy(), gray_frame.copy(), faces, self.hat.isChecked(), self.glasses.isChecked(), self.mustache.isChecked())
 
         self.update_fps(time_start)
 
